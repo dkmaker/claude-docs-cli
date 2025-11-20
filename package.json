@@ -1,0 +1,45 @@
+{
+  "name": "claude-docs",
+  "version": "1.0.0",
+  "description": "Claude Code Documentation Manager - Node.js CLI",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "claude-docs": "dist/cli.js"
+  },
+  "scripts": {
+    "dev": "node --experimental-strip-types --watch src/cli.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check --write .",
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "prebuild": "pnpm run clean",
+    "validate": "pnpm run check && pnpm run type-check && pnpm run test:run",
+    "start": "node dist/cli.js",
+    "bench": "time node dist/cli.js --version && time node dist/cli.js --help"
+  },
+  "keywords": ["cli", "documentation", "claude", "markdown"],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "dependencies": {
+    "commander": "14.0.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.19.1",
+    "@vitest/coverage-v8": "4.0.12",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.12"
+  }
+}
