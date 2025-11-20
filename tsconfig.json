@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    // Strict type checking (constitution requirement)
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // ES Module configuration
+    "module": "ES2022",
+    "target": "ES2022",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+
+    // Type checking only (Node.js handles execution)
+    "noEmit": true,
+
+    // Node.js types
+    "types": ["node", "vitest/globals"],
+    "lib": ["ES2022"],
+
+    // Source maps for debugging
+    "sourceMap": true,
+    "inlineSources": true,
+
+    // Path resolution
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    // Skip lib checks for performance
+    "skipLibCheck": true,
+
+    // ESM interop
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

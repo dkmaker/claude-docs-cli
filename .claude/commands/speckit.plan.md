@@ -46,19 +46,57 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 2. **Generate and dispatch research agents**:
 
+   For each unknown in Technical Context, use Perplexity MCP tools to conduct research:
+
+   **Research Tool Selection:**
+   - Use `mcp__plugin_perplexity_perplexity__perplexity_search` for finding specific documentation, libraries, examples, or quick factual lookups (DEFAULT - use this for most research)
+   - Use `mcp__plugin_perplexity_perplexity__perplexity_reason` for comparing alternatives and making technical decisions
+   - Use `mcp__plugin_perplexity_perplexity__perplexity_research` ONLY for highly complex architectural decisions requiring deep analysis (use sparingly - very time-intensive)
+
+   **Research Tasks:**
    ```text
    For each unknown in Technical Context:
-     Task: "Research {unknown} for {feature context}"
+     1. Use perplexity_search to find relevant documentation, tutorials, or examples
+     2. If comparing 3+ alternatives: Use perplexity_reason to evaluate options
+     3. ONLY if architecturally complex: Use perplexity_research for deep analysis
+
    For each technology choice:
-     Task: "Find best practices for {tech} in {domain}"
+     1. Use perplexity_search to find "{tech} best practices in {domain}"
+     2. Use perplexity_reason to compare options and justify the chosen approach
    ```
 
-3. **Consolidate findings** in `research.md` using format:
-   - Decision: [what was chosen]
-   - Rationale: [why chosen]
-   - Alternatives considered: [what else evaluated]
+   **Research Output Requirements:**
+   - Include citations from Perplexity responses in research.md
+   - Document alternatives considered with sources
+   - Capture reasoning chain for technical decisions
 
-**Output**: research.md with all NEEDS CLARIFICATION resolved
+3. **Consolidate findings** in `research.md` using format:
+
+   For each research topic, include:
+   - **Decision**: [what was chosen]
+   - **Rationale**: [why chosen with reasoning from perplexity_reason]
+   - **Alternatives considered**: [what else evaluated]
+   - **Sources**: [citations from Perplexity - URLs or references]
+   - **Research Method**: [which Perplexity tool(s) used: search/reason/research]
+   - **Confidence Level**: [High/Medium/Low based on source quality and consensus]
+
+   **Example Entry:**
+   ```markdown
+   ## Database Technology Choice
+
+   - **Decision**: PostgreSQL 15
+   - **Rationale**: Best support for JSONB queries needed for dynamic schemas, proven at scale for analytics workloads, strong TypeScript ORM support
+   - **Alternatives considered**:
+     - MongoDB: Rejected due to weaker transactional guarantees
+     - MySQL: Rejected due to limited JSON query capabilities
+   - **Sources**:
+     - https://www.postgresql.org/docs/15/datatype-json.html
+     - Stack Overflow Developer Survey 2024 - Database preferences
+   - **Research Method**: perplexity_search for benchmarks, perplexity_reason for comparison
+   - **Confidence Level**: High (multiple production references, official docs)
+   ```
+
+**Output**: research.md with all NEEDS CLARIFICATION resolved, including citations and sources
 
 ### Phase 1: Design & Contracts
 
