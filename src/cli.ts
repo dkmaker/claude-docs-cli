@@ -270,7 +270,5 @@ export async function main() {
   program.parse(process.argv);
 }
 
-// Execute if this file is run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
-}
+// Execute main function (this is a bin entry point)
+main();
