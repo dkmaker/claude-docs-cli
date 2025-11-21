@@ -9,7 +9,7 @@ import {
   safeReadFile,
   safeWriteFile,
   verifyFileIntegrity,
-} from '../../src/lib/file-ops.js';
+} from '../../../src/lib/file-ops.js';
 
 describe('File Operations', () => {
   let tempDir: string;

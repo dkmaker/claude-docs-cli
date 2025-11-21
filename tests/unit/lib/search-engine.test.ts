@@ -6,9 +6,9 @@ import {
   searchDocuments,
   formatSearchResults,
   type SearchOptions,
-} from '../../src/lib/search-engine.js';
-import { getDocPath } from '../../src/utils/path-resolver.js';
-import * as fileOps from '../../src/lib/file-ops.js';
+} from '../../../src/lib/search-engine.js';
+import { getDocPath } from '../../../src/utils/path-resolver.js';
+import * as fileOps from '../../../src/lib/file-ops.js';
 
 describe('Search Engine', () => {
   let tempDir: string;
@@ -22,9 +22,16 @@ describe('Search Engine', () => {
     );
     process.env.HOME = tempDir;
 
-    // Create test documents
+    // Clear any existing test documents (in case of incomplete cleanup)
+    try {
+      await rm(tempDir, { recursive: true, force: true });
+    } catch {
+      // Ignore if directory doesn't exist
+    }
+
+    // Create test documents with base names for shared tests
     await fileOps.safeWriteFile(
-      getDocPath('doc1.md'),
+      getDocPath('base-doc1.md'),
       `# Document 1
 
 This is a test document about plugins.
@@ -37,7 +44,7 @@ Configure plugins in the config file.`,
     );
 
     await fileOps.safeWriteFile(
-      getDocPath('doc2.md'),
+      getDocPath('base-doc2.md'),
       `# Document 2
 
 This document discusses hooks and middleware.
@@ -50,7 +57,7 @@ Plugin development requires understanding hooks.`,
     );
 
     await fileOps.safeWriteFile(
-      getDocPath('doc3.md'),
+      getDocPath('base-doc3.md'),
       `# Document 3
 
 Complete guide to CLI commands.
@@ -85,30 +92,30 @@ Use CLI commands to interact with the system.`,
 
       expect(results.length).toBeGreaterThan(0);
 
-      // Should find matches in doc1 and doc2
+      // Should find matches in base-doc1 and base-doc2
       const filenames = results.map((r) => r.filename);
-      expect(filenames).toContain('doc1.md');
-      expect(filenames).toContain('doc2.md');
+      expect(filenames).toContain('base-doc1.md');
+      expect(filenames).toContain('base-doc2.md');
     });
 
     it('should find matches with lowercase query', async () => {
       const results = await searchDocuments('plugin');
 
       expect(results.length).toBeGreaterThan(0);
-      expect(results.some((r) => r.filename === 'doc1.md')).toBe(true);
+      expect(results.some((r) => r.filename === 'base-doc1.md')).toBe(true);
     });
 
     it('should find matches with mixed case query', async () => {
       const results = await searchDocuments('PlUgIn');
 
       expect(results.length).toBeGreaterThan(0);
-      expect(results.some((r) => r.filename === 'doc1.md')).toBe(true);
+      expect(results.some((r) => r.filename === 'base-doc1.md')).toBe(true);
     });
 
     it('should support case-sensitive search when option is set', async () => {
-      // Create a test document with specific casing
+      // Create a test document with specific casing (unique filename)
       await fileOps.safeWriteFile(
-        getDocPath('case-test.md'),
+        getDocPath('t111-case-test.md'),
         `# Case Sensitive Test
 
 lowercase: plugin
@@ -141,8 +148,8 @@ MixedCase: Plugin`,
     it('should match multiple occurrences in same document', async () => {
       const results = await searchDocuments('plugin');
 
-      // doc1.md has multiple lines with "plugin"
-      const doc1Results = results.filter((r) => r.filename === 'doc1.md');
+      // base-doc1.md has multiple lines with "plugin"
+      const doc1Results = results.filter((r) => r.filename === 'base-doc1.md');
       expect(doc1Results.length).toBeGreaterThan(1);
     });
   });
@@ -235,10 +242,10 @@ MixedCase: Plugin`,
     });
 
     it('should format detailed results for first 10', async () => {
-      // Create more test documents to get more results
+      // Create more test documents to get more results (unique naming for this test)
       for (let i = 4; i <= 15; i++) {
         await fileOps.safeWriteFile(
-          getDocPath(`doc${i}.md`),
+          getDocPath(`t113-format-detailed-doc${i}.md`),
           `# Document ${i}\n\nThis mentions plugin functionality.\nPlugins are great.`,
         );
       }
@@ -257,10 +264,10 @@ MixedCase: Plugin`,
     });
 
     it('should show summary for results beyond limit', async () => {
-      // Create documents to ensure we have more than 10 results
+      // Create documents to ensure we have more than 10 results (unique naming for this test)
       for (let i = 4; i <= 20; i++) {
         await fileOps.safeWriteFile(
-          getDocPath(`doc${i}.md`),
+          getDocPath(`t113-summary-beyond-doc${i}.md`),
           `# Document ${i}\n\nPlugin content here.\nMore plugin info.`,
         );
       }
@@ -318,8 +325,8 @@ MixedCase: Plugin`,
     });
 
     it('should skip non-markdown files', async () => {
-      // Create a non-markdown file
-      await fileOps.safeWriteFile(getDocPath('readme.txt'), 'Plugin info in txt file');
+      // Create a non-markdown file (unique filename)
+      await fileOps.safeWriteFile(getDocPath('non-markdown-skip-test.txt'), 'Plugin info in txt file');
 
       const results = await searchDocuments('plugin');
 

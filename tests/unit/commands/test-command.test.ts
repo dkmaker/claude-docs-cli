@@ -9,7 +9,7 @@ const __dirname = dirname(__filename);
 // Helper function to execute CLI (test against built version)
 function execCLI(args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve) => {
-    const builtCliPath = join(__dirname, '../../dist/cli.js');
+    const builtCliPath = join(__dirname, '../../../dist/cli.js');
     const child = spawn('node', [builtCliPath, ...args]);
     let stdout = '';
     let stderr = '';

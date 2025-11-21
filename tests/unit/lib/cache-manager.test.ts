@@ -1,6 +1,4 @@
-import { rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { rm } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   writeCache,
@@ -9,28 +7,31 @@ import {
   clearCache,
   getCacheStats,
   warmCache,
-} from '../../src/lib/cache-manager.js';
-import { CACHE_DIR, getDocPath, getCachePath } from '../../src/utils/path-resolver.js';
-import * as fileOps from '../../src/lib/file-ops.js';
+} from '../../../src/lib/cache-manager.js';
+import { getCachePath, getDocPath } from '../../../src/utils/path-resolver.js';
+import * as fileOps from '../../../src/lib/file-ops.js';
 
 describe('Cache Manager', () => {
-  let tempDir: string;
+  let testFilename: string;
+  let testSourceUrl: string;
+  let testContent: string;
   const originalHome = process.env.HOME;
 
   beforeEach(async () => {
-    // Create unique temp directory for each test
-    tempDir = join(
-      tmpdir(),
-      `test-cache-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-    );
-    process.env.HOME = tempDir;
+    // Create unique test data with timestamp and random to avoid conflicts
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    testFilename = `test-doc-${uniqueId}.md`;
+    testSourceUrl = `https://example.com/test-doc-${uniqueId}.md`;
+    testContent = `# Test Document ${uniqueId}\n\nThis is test content.`;
+
+    // Clear mock call counts
     vi.clearAllMocks();
 
-    // Ensure clean state - remove any existing cache
+    // Ensure cache is clean before each test
     try {
-      await rm(join(tempDir, '.claude-docs', 'cache'), { recursive: true, force: true });
+      await clearCache();
     } catch {
-      // Ignore if doesn't exist
+      // Ignore if cache doesn't exist
     }
   });
 
@@ -38,16 +39,13 @@ describe('Cache Manager', () => {
     process.env.HOME = originalHome;
     vi.restoreAllMocks();
 
+    // Clean up cache after each test
     try {
-      await rm(tempDir, { recursive: true, force: true });
+      await clearCache();
     } catch {
       // Ignore
     }
   });
-
-  const testFilename = 'test-doc.md';
-  const testSourceUrl = 'https://example.com/test-doc.md';
-  const testContent = '# Test Document\n\nThis is test content.';
 
   describe('T038: Unit test for cache-manager', () => {
     it('should export writeCache function', () => {
@@ -144,12 +142,15 @@ describe('Cache Manager', () => {
 
   describe('T040: Test cache read and validation', () => {
     it('should read valid cached content', async () => {
-      // Write cache first
-      await writeCache(testFilename, testContent, testSourceUrl);
-
-      // Create source file (required for validation)
+      // Create source file FIRST (required for validation)
       const sourcePath = getDocPath(testFilename);
       await fileOps.safeWriteFile(sourcePath, testContent);
+
+      // Wait a bit to ensure cache will have a newer timestamp than source
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Write cache after source exists
+      await writeCache(testFilename, testContent, testSourceUrl);
 
       // Read cache
       const cached = await readCache(testFilename);
@@ -385,23 +386,29 @@ describe('Cache Manager', () => {
       // Clear first to ensure clean state
       await clearCache();
 
+      // Create unique filenames for this test
+      const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      const doc1 = `doc1-${uniqueId}.md`;
+      const doc2 = `doc2-${uniqueId}.md`;
+      const doc3 = `doc3-${uniqueId}.md`;
+
       // Create multiple cache entries
-      await writeCache('doc1.md', 'Content 1', 'url1');
-      await writeCache('doc2.md', 'Content 2', 'url2');
-      await writeCache('doc3.md', 'Content 3', 'url3');
+      await writeCache(doc1, 'Content 1', 'url1');
+      await writeCache(doc2, 'Content 2', 'url2');
+      await writeCache(doc3, 'Content 3', 'url3');
 
       // Verify caches exist
-      expect(await fileOps.fileExists(getCachePath('doc1.md'))).toBe(true);
-      expect(await fileOps.fileExists(getCachePath('doc2.md'))).toBe(true);
-      expect(await fileOps.fileExists(getCachePath('doc3.md'))).toBe(true);
+      expect(await fileOps.fileExists(getCachePath(doc1))).toBe(true);
+      expect(await fileOps.fileExists(getCachePath(doc2))).toBe(true);
+      expect(await fileOps.fileExists(getCachePath(doc3))).toBe(true);
 
       // Clear cache
       await clearCache();
 
       // Verify caches are gone
-      expect(await fileOps.fileExists(getCachePath('doc1.md'))).toBe(false);
-      expect(await fileOps.fileExists(getCachePath('doc2.md'))).toBe(false);
-      expect(await fileOps.fileExists(getCachePath('doc3.md'))).toBe(false);
+      expect(await fileOps.fileExists(getCachePath(doc1))).toBe(false);
+      expect(await fileOps.fileExists(getCachePath(doc2))).toBe(false);
+      expect(await fileOps.fileExists(getCachePath(doc3))).toBe(false);
     });
 
     it('should not throw when cache directory does not exist', async () => {
@@ -418,9 +425,14 @@ describe('Cache Manager', () => {
       // Clear any existing cache first
       await clearCache();
 
+      // Create unique filenames for this test
+      const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      const doc1 = `doc1-${uniqueId}.md`;
+      const doc2 = `doc2-${uniqueId}.md`;
+
       // Create cache entries
-      await writeCache('doc1.md', 'Content 1', 'url1');
-      await writeCache('doc2.md', 'Content 2', 'url2');
+      await writeCache(doc1, 'Content 1', 'url1');
+      await writeCache(doc2, 'Content 2', 'url2');
 
       const stats = await getCacheStats();
 
@@ -444,16 +456,22 @@ describe('Cache Manager', () => {
 
   describe('warmCache', () => {
     it('should pre-generate cache for all documents', async () => {
-      // Create source files
-      await fileOps.safeWriteFile(getDocPath('doc1.md'), 'Content 1');
-      await fileOps.safeWriteFile(getDocPath('doc2.md'), 'Content 2');
-      await fileOps.safeWriteFile(getDocPath('doc3.md'), 'Content 3');
+      // Create unique filenames for this test
+      const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      const doc1 = `doc1-${uniqueId}.md`;
+      const doc2 = `doc2-${uniqueId}.md`;
+      const doc3 = `doc3-${uniqueId}.md`;
 
-      const filenames = ['doc1.md', 'doc2.md', 'doc3.md'];
+      // Create source files
+      await fileOps.safeWriteFile(getDocPath(doc1), 'Content 1');
+      await fileOps.safeWriteFile(getDocPath(doc2), 'Content 2');
+      await fileOps.safeWriteFile(getDocPath(doc3), 'Content 3');
+
+      const filenames = [doc1, doc2, doc3];
       const sourceUrls = {
-        'doc1.md': 'url1',
-        'doc2.md': 'url2',
-        'doc3.md': 'url3',
+        [doc1]: 'url1',
+        [doc2]: 'url2',
+        [doc3]: 'url3',
       };
 
       await warmCache(filenames, sourceUrls);
@@ -466,20 +484,25 @@ describe('Cache Manager', () => {
     });
 
     it('should skip files that fail to cache', async () => {
-      // Create only one source file
-      await fileOps.safeWriteFile(getDocPath('doc1.md'), 'Content 1');
+      // Create unique filenames for this test
+      const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      const doc1 = `doc1-${uniqueId}.md`;
+      const nonExistentDoc = `non-existent-${uniqueId}.md`;
 
-      const filenames = ['doc1.md', 'non-existent.md'];
+      // Create only one source file
+      await fileOps.safeWriteFile(getDocPath(doc1), 'Content 1');
+
+      const filenames = [doc1, nonExistentDoc];
       const sourceUrls = {
-        'doc1.md': 'url1',
-        'non-existent.md': 'url2',
+        [doc1]: 'url1',
+        [nonExistentDoc]: 'url2',
       };
 
       // Should not throw even though one file is missing
       await expect(warmCache(filenames, sourceUrls)).resolves.not.toThrow();
 
       // First file should be cached
-      const cached1 = await readCache('doc1.md');
+      const cached1 = await readCache(doc1);
       expect(cached1).not.toBeNull();
     });
   });

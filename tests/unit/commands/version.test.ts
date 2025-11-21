@@ -13,7 +13,7 @@ function execCLI(
 ): Promise<{ stdout: string; stderr: string; exitCode: number; duration: number }> {
   return new Promise((resolve) => {
     const start = Date.now();
-    const builtCliPath = join(__dirname, '../../dist/cli.js');
+    const builtCliPath = join(__dirname, '../../../dist/cli.js');
     const child = spawn('node', [builtCliPath, ...args]);
     let stdout = '';
     let stderr = '';

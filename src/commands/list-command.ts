@@ -27,6 +27,10 @@ export async function listCommand(docSlug?: string): Promise<void> {
   const formatter = new OutputFormatter(detectOutputMode());
 
   try {
+    // T108: Show 24-hour update reminder
+    const { checkUpdateReminder } = await import('./update-command.js');
+    await checkUpdateReminder();
+
     // Try cache first
     const cacheKey = getListCacheKey(docSlug);
     const cached = await readCache(cacheKey);
