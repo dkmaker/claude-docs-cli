@@ -5,15 +5,20 @@ Quick guide for creating releases with Changesets + AI assistance.
 ## Quick Commands
 
 ```bash
-# Create a changeset (AI-assisted in Claude Code)
-/changeset
+# Get status and guidance (smart helper)
+/change:help
+
+# Create a changeset (AI-assisted)
+/change:changeset "your change description"
 
 # Preview what's cooking
-/version
+/change:version
 
 # Create release PR
-/release
+/change:release
 ```
+
+**Note**: Commands are namespaced under `/change:` but also work without prefix if no conflicts exist.
 
 ## Manual Testing (Local)
 
@@ -37,7 +42,7 @@ git restore package.json CHANGELOG.md .changeset/
 
 ```bash
 # Option A: AI-assisted (in Claude Code)
-/changeset "Your change description"
+/change:changeset "Your change description"
 
 # Option B: Manual
 pnpm changeset
@@ -50,10 +55,14 @@ Result: Creates `.changeset/some-name-123.md`
 ### 2. Check What's Pending
 
 ```bash
-# Option A: AI preview (in Claude Code)
-/version
+# Option A: Smart helper (in Claude Code)
+/change:help
+# Analyzes your status and tells you what to do
 
-# Option B: Manual
+# Option B: Preview version (in Claude Code)
+/change:version
+
+# Option C: Manual
 pnpm changeset status
 # Shows: Current version → Next version
 ```
@@ -62,7 +71,7 @@ pnpm changeset status
 
 ```bash
 # Option A: AI-assisted (in Claude Code)
-/release
+/change:release
 # Creates release branch + PR automatically
 
 # Option B: Manual
@@ -88,27 +97,35 @@ When the PR is merged to `main`, GitHub Actions automatically:
 
 ## Testing the Workflow
 
-### Test 1: Create a Changeset
+### Test 1: Get Help & Status
+
+```bash
+# Smart helper analyzes your current state
+/change:help
+# Shows: status, pending changesets, and what to do next
+```
+
+### Test 2: Create a Changeset
 
 ```bash
 # Make a small change
 echo "# Test" >> test.md
 
 # Create changeset
-/changeset "test changeset creation"
+/change:changeset "test changeset creation"
 
 # Verify
 cat .changeset/*.md  # Should show your changeset
 ```
 
-### Test 2: Preview Version
+### Test 3: Preview Version
 
 ```bash
-/version
+/change:version
 # Should show: 1.0.0 → 1.0.1 (or similar)
 ```
 
-### Test 3: Full Release (Dry Run)
+### Test 4: Full Release (Dry Run)
 
 ```bash
 # Create test changeset
@@ -126,10 +143,10 @@ git diff package.json CHANGELOG.md
 git restore package.json CHANGELOG.md .changeset/
 ```
 
-### Test 4: Actual Release (When Ready)
+### Test 5: Actual Release (When Ready)
 
 ```bash
-/release
+/change:release
 # Or manually:
 # 1. pnpm changeset version
 # 2. git add . && git commit -m "chore: release"
@@ -138,6 +155,11 @@ git restore package.json CHANGELOG.md .changeset/
 
 ## Troubleshooting
 
+**Not sure what to do next?**
+```bash
+/change:help  # AI analyzes your state and guides you
+```
+
 **No changesets pending?**
 ```bash
 ls .changeset/*.md  # Check if any exist (besides README.md)
@@ -145,7 +167,7 @@ ls .changeset/*.md  # Check if any exist (besides README.md)
 
 **Want to see what version will be?**
 ```bash
-/version  # AI preview
+/change:version  # AI preview
 # or
 pnpm changeset status  # Manual check
 ```
@@ -176,4 +198,23 @@ git restore package.json CHANGELOG.md .changeset/
 
 ---
 
-**Need help?** Run `/changeset`, `/version`, or `/release` in Claude Code for AI assistance.
+## Command Reference
+
+All commands are under the `/change:` namespace:
+
+| Command | Description | When to Use |
+|---------|-------------|-------------|
+| `/change:help` | Analyze status and guide next steps | When you're not sure what to do |
+| `/change:changeset` | Create a changeset with AI | After making code changes |
+| `/change:version` | Preview version bump | Before creating release |
+| `/change:release` | Create release PR | When ready to release |
+
+**Shortcuts**: If no conflicts, you can omit `/change:` prefix:
+- `/help` → `/change:help`
+- `/changeset` → `/change:changeset`
+- `/version` → `/change:version`
+- `/release` → `/change:release`
+
+---
+
+**Need help?** Run `/change:help` in Claude Code for smart guidance based on your current state.
