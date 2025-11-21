@@ -223,48 +223,34 @@ Commander.js provides:
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management and automated GitHub Releases.
 
-### Release Workflow (AI-Assisted)
+### Release Workflow (Fully AI-Assisted)
 
-We provide custom slash commands to streamline the release process:
-
-#### 1. Create a Changeset (After Making Changes)
+The complete release process is handled by AI through 5 simple commands:
 
 ```bash
-# In Claude Code, after making your changes:
-/changeset "Added new search filter feature"
+# 1. Create changeset
+/change:changeset "description of your changes"
 
-# Or just:
-/changeset
+# 2. Commit it
+/change:commit
 
-# The AI will:
-# - Analyze your git changes
-# - Determine appropriate version bump (major/minor/patch)
-# - Write a user-friendly changelog entry
-# - Create the changeset file
+# 3. Preview version
+/change:version
+
+# 4. Create release PR
+/change:release
+
+# 5. Merge and complete
+/change:merge
 ```
 
-#### 2. Preview Version Bump
+Each command is intelligent:
+- **Analyzes** your current state
+- **Validates** prerequisites
+- **Executes** the appropriate actions
+- **Guides** you to the next step
 
-```bash
-/version
-
-# Shows what version will be released based on pending changesets
-```
-
-#### 3. Create Release
-
-```bash
-/release
-
-# The AI will:
-# - Run `pnpm changeset version` to bump version
-# - Create a release branch
-# - Create a PR with changelog
-# - When you merge the PR, GitHub Actions automatically:
-#   - Runs quality gates
-#   - Creates GitHub Release with tarball
-#   - Updates LATEST_RELEASE.txt
-```
+**Need help?** Run `/change:help` anytime to see what to do next.
 
 ### Manual Workflow (Without AI)
 

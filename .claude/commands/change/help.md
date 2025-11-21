@@ -76,15 +76,10 @@ Based on the state, tell the user what to do:
   1. `/change:version` (preview)
   2. `/change:release` (create PR)
 
-**Scenario C: Changesets exist, uncommitted changes**
-- Detected: Pending changesets + uncommitted changes
-- Action: "Commit your changeset files first"
-- Commands:
-  ```bash
-  git add .changeset/
-  git commit -m "Add changesets"
-  git push
-  ```
+**Scenario C: Changesets exist, uncommitted**
+- Detected: Changeset files not yet committed
+- Action: "Commit your changeset files"
+- Command: `/change:commit`
 
 **Scenario D: No changesets, clean working directory**
 - Detected: No changesets, no uncommitted changes
@@ -93,21 +88,29 @@ Based on the state, tell the user what to do:
 **Scenario E: On a release branch**
 - Detected: Branch name contains "release"
 - Action: "Merge your release PR to complete the release"
+- Command: `/change:merge`
+
+**Scenario F: Release PR exists, ready to merge**
+- Detected: Open PR with "release" in title, all checks passed
+- Action: "Merge the PR to complete the release"
+- Command: `/change:merge`
 
 ### 4. Show Available Commands
 
 List all release management commands:
 
 ```
-Available Commands:
--------------------
-/change:help      - Show this help (analyze status)
-/change:changeset - Create a changeset for your changes
+Full Release Workflow (AI-Assisted):
+-------------------------------------
+/change:help      - Analyze status and guide next steps
+/change:changeset - Create changeset (AI analyzes changes)
+/change:commit    - Commit changeset files
 /change:version   - Preview version bump
-/change:release   - Prepare and create release PR
+/change:release   - Create release PR (bump + branch + PR)
+/change:merge     - Merge PR and complete release
 
-Or use shortcuts (if no conflicts):
-/changeset, /version, /release, /help
+Shortcuts (if no conflicts):
+/help, /changeset, /commit, /version, /release, /merge
 ```
 
 ### 5. Read Pending Changesets (If Any)
@@ -167,8 +170,10 @@ If LATEST_RELEASE.txt exists:
   Then run: /change:version to preview the release
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 Quick Reference:
-   /change:changeset - Create new changeset
-   /change:version   - Preview version bump
+💡 Quick Reference (Full Workflow):
+   /change:changeset - Create changeset
+   /change:commit    - Commit changeset
+   /change:version   - Preview version
    /change:release   - Create release PR
+   /change:merge     - Merge and complete
 ```

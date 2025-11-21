@@ -59,16 +59,35 @@ If user confirms:
   - Body: Include the changelog entries
   - Labels: "release"
 
-### 5. Explain Next Steps
+### 5. Show PR Details and Next Steps
 
-Tell the user:
-- The PR has been created
-- When they merge this PR to main, the GitHub Actions workflow will:
-  - Run quality gates
-  - Create a GitHub Release
-  - Upload tarball
-  - Update LATEST_RELEASE.txt
-- Provide the PR URL
+Display the PR information clearly:
+
+```
+🎉 Release PR Created!
+
+  PR: https://github.com/owner/repo/pull/123
+  Title: chore: release v1.2.0
+  Branch: release-v1.2.0
+
+📋 Next Step:
+
+  Merge the PR to complete the release:
+
+  /change:merge
+
+  This will:
+  ✅ Check PR status and CI tests
+  ✅ Merge the PR
+  ✅ Delete release branch
+  ✅ Switch back to main
+  ✅ Pull latest changes
+  ✅ Monitor release workflow
+```
+
+- Provide clear PR URL
+- Show exact command to run next: `/change:merge`
+- Explain what merge will do
 
 ## Important Notes
 

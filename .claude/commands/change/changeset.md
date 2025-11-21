@@ -46,7 +46,15 @@ You are helping the user create a changeset for their pending changes using the 
    <your-summary-here>
    ```
 
-5. **Confirm creation**: Let the user know the changeset was created and show them the summary
+5. **Confirm creation and show next steps**:
+
+Tell the user:
+- ✅ Changeset created successfully
+- Show the summary
+- **Next steps**:
+  - Run `/change:commit` to commit the changeset
+  - Or continue making changes and create more changesets
+  - When ready: `/change:version` to preview, then `/change:release`
 
 ## Additional Context from User
 

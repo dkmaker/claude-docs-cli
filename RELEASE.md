@@ -2,20 +2,28 @@
 
 Quick guide for creating releases with Changesets + AI assistance.
 
-## Quick Commands
+## Complete AI-Assisted Release (5 Commands)
+
+The entire release process is handled by AI:
 
 ```bash
-# Get status and guidance (smart helper)
-/change:help
+# 1. Create changeset (AI analyzes your changes)
+/change:changeset "description"
 
-# Create a changeset (AI-assisted)
-/change:changeset "your change description"
+# 2. Commit changeset (AI commits it)
+/change:commit
 
-# Preview what's cooking
+# 3. Preview version (AI shows what's pending)
 /change:version
 
-# Create release PR
+# 4. Create release PR (AI bumps version, creates PR)
 /change:release
+
+# 5. Merge and complete (AI checks tests, merges, cleans up)
+/change:merge
+
+# Or get smart guidance anytime
+/change:help
 ```
 
 **Note**: Commands are namespaced under `/change:` but also work without prefix if no conflicts exist.
@@ -36,58 +44,58 @@ pnpm changeset version
 git restore package.json CHANGELOG.md .changeset/
 ```
 
-## Release Flow
+## Release Flow (AI-Assisted)
 
-### 1. After Making Changes
-
+### 1. Create Changeset
 ```bash
-# Option A: AI-assisted (in Claude Code)
 /change:changeset "Your change description"
-
-# Option B: Manual
-pnpm changeset
-# Select: minor/patch/major
-# Write: Summary of changes
 ```
+→ AI analyzes git diff, determines version bump, creates changeset file
 
-Result: Creates `.changeset/some-name-123.md`
-
-### 2. Check What's Pending
-
+### 2. Commit Changeset
 ```bash
-# Option A: Smart helper (in Claude Code)
-/change:help
-# Analyzes your status and tells you what to do
+/change:commit
+```
+→ AI commits the changeset file with appropriate message
 
-# Option B: Preview version (in Claude Code)
+### 3. Preview Version
+```bash
 /change:version
-
-# Option C: Manual
-pnpm changeset status
-# Shows: Current version → Next version
 ```
+→ AI reads changesets, calculates next version, shows preview
 
-### 3. Create Release
+### 4. Create Release PR
+```bash
+/change:release
+```
+→ AI runs version bump, creates release branch, creates PR
+
+### 5. Merge and Complete
+```bash
+/change:merge
+```
+→ AI checks PR status, merges, deletes branch, returns to main, monitors release
+
+**Result**: Release v1.x.x published on GitHub with tarball and updated LATEST_RELEASE.txt
+
+## Manual Alternative
+
+If you prefer manual control:
 
 ```bash
-# Option A: AI-assisted (in Claude Code)
-/change:release
-# Creates release branch + PR automatically
+# 1. Create changeset
+pnpm changeset
 
-# Option B: Manual
-pnpm changeset version    # Bump version
-git add .
-git commit -m "chore: release v1.2.3"
+# 2. Commit it
+git add .changeset/ && git commit -m "Add changeset"
+
+# 3. Create release
+pnpm changeset version
+git add . && git commit -m "chore: release"
 git push origin main
+
+# GitHub Actions handles the rest
 ```
-
-### 4. Merge PR
-
-When the PR is merged to `main`, GitHub Actions automatically:
-1. ✅ Runs quality gates
-2. ✅ Creates GitHub Release
-3. ✅ Uploads tarball
-4. ✅ Updates LATEST_RELEASE.txt
 
 ## View Releases
 
@@ -202,18 +210,17 @@ git restore package.json CHANGELOG.md .changeset/
 
 All commands are under the `/change:` namespace:
 
-| Command | Description | When to Use |
-|---------|-------------|-------------|
-| `/change:help` | Analyze status and guide next steps | When you're not sure what to do |
-| `/change:changeset` | Create a changeset with AI | After making code changes |
-| `/change:version` | Preview version bump | Before creating release |
-| `/change:release` | Create release PR | When ready to release |
+| Command | Description | What It Does |
+|---------|-------------|--------------|
+| `/change:help` | Smart status analyzer | Analyzes repo state, guides next action |
+| `/change:changeset` | Create changeset | AI analyzes changes, creates changeset file |
+| `/change:commit` | Commit changesets | Commits changeset files with smart message |
+| `/change:version` | Preview version bump | Shows next version and pending changes |
+| `/change:release` | Create release PR | Bumps version, creates branch and PR |
+| `/change:merge` | Merge and complete | Checks tests, merges PR, cleans up, monitors |
 
 **Shortcuts**: If no conflicts, you can omit `/change:` prefix:
-- `/help` → `/change:help`
-- `/changeset` → `/change:changeset`
-- `/version` → `/change:version`
-- `/release` → `/change:release`
+- `/help`, `/changeset`, `/commit`, `/version`, `/release`, `/merge`
 
 ---
 
