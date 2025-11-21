@@ -12,6 +12,7 @@ import type {
   SearchResult,
   UpdateStatusResult,
 } from '../types/command-results.js';
+import * as boxDrawing from './box-drawing.js';
 import { OutputFormatter } from './output-formatter.js';
 
 export type OutputMode = 'ai' | 'user' | 'json';
@@ -374,7 +375,7 @@ export class AIRenderer implements Renderer {
 }
 
 /**
- * User Renderer - colorful, emoji-rich output for humans
+ * User Renderer - beautiful Unicode tables and boxes for humans
  */
 export class UserRenderer implements Renderer {
   private formatter: OutputFormatter;
@@ -391,18 +392,94 @@ export class UserRenderer implements Renderer {
     const { data } = result;
     let output = '';
 
-    // Keep existing user-friendly format
     if (data.type === 'list_all') {
-      output += this.formatter.info(`📚 Available Documentation (${data.totalCount} sections)\n\n`);
-      for (const item of data.items) {
-        output += `${item.slug}\n`;
+      // Header
+      output += boxDrawing.createHeaderBox('📚 Available Documentation');
+      output += '\n';
+
+      // Show by category
+      if (data.categories && data.categories.length > 0) {
+        // Pre-calculate max widths across ALL categories for consistent table size
+        const maxSlugWidth = Math.max(4, ...data.items.map((i) => i.slug.length));
+        const maxTitleWidth = Math.max(5, ...data.items.map((i) => i.title.length));
+        const sectionsWidth = 8;
+
+        // Calculate total table width: columns + separators + borders
+        // Each column has: width + 2 spaces padding
+        // Separators: 3 vertical bars (│)
+        // Total: (col1 + 2) + 1 + (col2 + 2) + 1 + (col3 + 2) = sum(cols) + 6 + 2
+        const tableWidth = maxSlugWidth + maxTitleWidth + sectionsWidth + 8;
+
+        for (const category of data.categories) {
+          // Category divider (match table width exactly)
+          output += this.formatter.info(boxDrawing.createDivider(category.name, tableWidth));
+          output += '\n\n';
+
+          // Build table data with fixed widths
+          const headers = [
+            this.formatter.bold('Slug'.padEnd(maxSlugWidth)),
+            this.formatter.bold('Title'.padEnd(maxTitleWidth)),
+            this.formatter.bold('Sections')
+          ];
+          const rows = category.docs.map((item) => [
+            this.formatter.cyan(item.slug.padEnd(maxSlugWidth)),
+            item.title.padEnd(maxTitleWidth),
+            this.formatter.dim(boxDrawing.rightAlign(String(item.sectionCount ?? 'N/A'), 8)),
+          ]);
+
+          output += boxDrawing.createTable(headers, rows, 'light');
+          output += '\n';
+        }
       }
+
+      output += this.formatter.bold(`Total: ${data.totalCount} documents`) + '\n\n';
+
+      // Info box with tips
+      const tips = [
+        '',
+        this.formatter.success('  ▸') + ' Get a document:       ' + this.formatter.cyan('claude-docs get overview'),
+        this.formatter.success('  ▸') + ' Get specific section: ' + this.formatter.cyan('claude-docs get settings#hooks'),
+        this.formatter.success('  ▸') + ' List sections:        ' + this.formatter.cyan('claude-docs list quickstart'),
+        '',
+        this.formatter.warning('  💡') + ' Related topics have multiple docs:',
+        '      • plugins → plugins-reference, plugin-marketplaces',
+        '      • hooks → hooks, hooks-guide',
+        '      • settings → model-config, terminal-config, statusline',
+        '',
+      ];
+
+      output += boxDrawing.createInfoBox(tips);
+
     } else {
-      output += this.formatter.info('📑 Sections:\n\n');
-      for (const item of data.items) {
+      // Section list
+      const docName = data.items[0]?.slug ?? 'Document';
+      output += boxDrawing.createHeaderBox(`📖 ${docName} - Table of Contents`);
+      output += '\n';
+
+      const headers = [this.formatter.bold('Level'), this.formatter.bold('Section')];
+      const rows = data.items.map((item) => {
         const indent = '  '.repeat((item.level ?? 1) - 1);
-        output += `${indent}${item.title}\n`;
-      }
+        const level = this.formatter.dim('#'.repeat(item.level ?? 1));
+        return [level, indent + item.title];
+      });
+
+      output += boxDrawing.createTable(headers, rows, 'light');
+      output += '\n';
+
+      output += this.formatter.bold(`Total: ${data.totalCount} sections`) + '\n\n';
+
+      // Info box
+      const tips = [
+        '',
+        '  To read any section, use:',
+        '',
+        this.formatter.success('  ▸') + ' ' + this.formatter.cyan(`claude-docs get ${docName}#section-name`),
+        '',
+        this.formatter.warning('  💡') + ' Tip: Anchor slugs are lowercase with hyphens',
+        '',
+      ];
+
+      output += boxDrawing.createInfoBox(tips, 60);
     }
 
     return output;
@@ -413,8 +490,38 @@ export class UserRenderer implements Renderer {
       return this.renderError(result);
     }
 
-    // Just return content for user mode (existing behavior)
-    return result.data.content;
+    const { data, metadata } = result;
+    // boxDrawing already imported at top
+    let output = '';
+
+    // Header
+    output += boxDrawing.createHeaderBox(`📖 ${data.title}`);
+    output += '\n';
+
+    // Content
+    output += data.content + '\n\n';
+
+    // Info footer (only if fresh data)
+    if (!metadata?.dataAge || metadata.dataAge <= 24) {
+      const info = [
+        this.formatter.dim(`Source: ${data.source} • Sections: ${data.sectionCount}`)
+      ];
+      output += boxDrawing.createInfoBox(info, 60);
+    } else {
+      // Stale warning
+      const warning = [
+        '',
+        this.formatter.warning('⚠️  Documentation may be outdated'),
+        '',
+        this.formatter.dim(`Last update: ${metadata.dataAge} hours ago`),
+        '',
+        'To refresh: ' + this.formatter.cyan('claude-docs update'),
+        '',
+      ];
+      output += boxDrawing.createInfoBox(warning, 60);
+    }
+
+    return output;
   }
 
   renderSearch(result: CommandResult<SearchResult>): string {
@@ -423,15 +530,82 @@ export class UserRenderer implements Renderer {
     }
 
     const { data } = result;
+    // boxDrawing already imported at top
     let output = '';
 
-    output += this.formatter.info(`Found ${data.totalResults} results for "${data.query}"\n\n`);
+    // Header
+    output += boxDrawing.createHeaderBox('🔍 Search Results');
+    output += '\n';
 
-    for (const match of data.results) {
-      output += this.formatter.success(`📄 ${match.slug} (line ${match.lineNumber})\n`);
-      output += `   ${match.matchedText}\n`;
-      output += `   Context: ${match.context}\n\n`;
+    output += this.formatter.info(`Query: "${data.query}"`) + '\n\n';
+
+    if (data.totalResults === 0) {
+      output += 'No results found.\n\n';
+      const tips = [
+        '',
+        '  Try:',
+        '    • Using different keywords',
+        '    • Checking spelling',
+        '    • Browsing: ' + this.formatter.cyan('claude-docs list'),
+        '',
+      ];
+      output += boxDrawing.createInfoBox(tips, 60);
+      return output;
     }
+
+    // Build table (limit to 50)
+    const displayResults = data.results.slice(0, 50);
+
+    // Fixed max width for match column to prevent overflow
+    const MAX_MATCH_WIDTH = 47; // Leave room for "..."
+
+    const headers = [this.formatter.bold('Document'), this.formatter.bold('Line'), this.formatter.bold('Match')];
+    const rows = displayResults.map((match) => {
+      // Strip emojis and wide characters from match text for consistent display
+      let matchText = match.matchedText
+        // Remove emojis and special symbols
+        .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // Emoji
+        .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Misc symbols
+        .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Dingbats
+        .replace(/[✓✔✅✗✘❌⚠⚡]/g, '')           // Common status symbols
+        .trim();
+
+      // Truncate to max width
+      if (matchText.length > MAX_MATCH_WIDTH) {
+        matchText = matchText.substring(0, MAX_MATCH_WIDTH) + '...';
+      }
+      // Pad to exact width for consistent table
+      matchText = matchText.padEnd(MAX_MATCH_WIDTH + 3);
+
+      return [
+        this.formatter.cyan(match.slug),
+        this.formatter.dim(String(match.lineNumber)),
+        matchText,
+      ];
+    });
+
+    output += boxDrawing.createTable(headers, rows, 'light');
+    output += '\n';
+
+    output += this.formatter.bold(`Found: ${data.totalResults} results`);
+    if (data.totalResults > 50) {
+      output += this.formatter.dim(' (showing first 50)');
+    }
+    output += '\n\n';
+
+    // Next steps box
+    const uniqueDocs = [...new Set(displayResults.map((r) => r.slug))].slice(0, 3);
+    const tips = [
+      '',
+      '  To read any result:',
+      '',
+      ...uniqueDocs.map((slug) => this.formatter.success('  ▸') + ' ' + this.formatter.cyan(`claude-docs get ${slug}`)),
+      '',
+      this.formatter.warning('  💡') + ' Add #section to jump to specific content',
+      '',
+    ];
+
+    output += boxDrawing.createInfoBox(tips, 60);
 
     return output;
   }
@@ -491,32 +665,49 @@ export class UserRenderer implements Renderer {
     }
 
     const { data } = result;
+    // boxDrawing already imported at top
     let output = '';
 
-    output += this.formatter.info('🏥 Running Health Checks...\n\n');
+    // Header
+    output += boxDrawing.createHeaderBox('🏥 Health Check');
+    output += '\n';
 
-    for (const check of data.checks) {
-      const icon = check.status === 'pass' ? '✅' : check.status === 'warn' ? '⚠️' : '❌';
-      const color =
-        check.status === 'pass'
-          ? this.formatter.success.bind(this.formatter)
-          : check.status === 'warn'
-            ? this.formatter.warning.bind(this.formatter)
-            : this.formatter.error.bind(this.formatter);
+    output += this.formatter.info('Running diagnostics...') + '\n\n';
 
-      output += color(`${icon} ${check.name}\n`);
-      output += `   ${check.message}\n\n`;
-    }
+    // Build table
+    const headers = [this.formatter.bold('Check'), this.formatter.bold('Status'), this.formatter.bold('Details')];
+    const rows = data.checks.map((check) => {
+      const icon = check.status === 'pass' ? '✓' : check.status === 'warn' ? '⚠' : '✗';
+      const statusColor = check.status === 'pass'
+        ? this.formatter.success(icon)
+        : check.status === 'warn'
+          ? this.formatter.warning(icon)
+          : this.formatter.error(icon);
 
-    output += this.formatter.info('━'.repeat(60) + '\n');
+      return [check.name, statusColor, this.formatter.dim(check.message)];
+    });
 
-    if (data.overallStatus === 'failed') {
-      output += this.formatter.error('\n❌ Health check failed\n');
-    } else if (data.overallStatus === 'warnings') {
-      output += this.formatter.warning('\n⚠️  Health check passed with warnings\n');
-    } else {
-      output += this.formatter.success('\n✅ All health checks passed!\n');
-    }
+    output += boxDrawing.createTable(headers, rows, 'light');
+    output += '\n';
+
+    // Status box
+    const statusLines = [
+      '',
+      data.overallStatus === 'healthy'
+        ? this.formatter.success('  ✅ All health checks passed!')
+        : data.overallStatus === 'warnings'
+          ? this.formatter.warning('  ⚠️  Health check passed with warnings')
+          : this.formatter.error('  ❌ Health check failed'),
+      '',
+      data.overallStatus === 'healthy'
+        ? '  Your installation is healthy and ready to use.'
+        : data.overallStatus === 'warnings'
+          ? '  Warnings are normal for fresh installations.'
+          : '  Fix the issues above and run `claude-docs doctor` again',
+      '',
+    ];
+
+    output += boxDrawing.createInfoBox(statusLines, 60);
 
     return output;
   }
@@ -526,11 +717,23 @@ export class UserRenderer implements Renderer {
       return this.formatter.error('❌ Unknown error\n');
     }
 
+    // boxDrawing already imported at top
     let output = '';
-    output += this.formatter.error(`❌ Error: ${result.error.message}\n`);
 
+    // Error header
+    output += boxDrawing.createHeaderBox('❌ Error');
+    output += '\n';
+
+    output += this.formatter.error(result.error.message) + '\n\n';
+
+    // Suggestion box
     if (result.error.suggestion) {
-      output += this.formatter.info(`\n💡 ${result.error.suggestion}\n`);
+      const suggestions = [
+        '',
+        this.formatter.info('  💡 ' + result.error.suggestion),
+        '',
+      ];
+      output += boxDrawing.createInfoBox(suggestions, 60);
     }
 
     return output;

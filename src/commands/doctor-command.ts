@@ -3,21 +3,17 @@ import { access } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { OutputFormatter } from '../lib/output-formatter.js';
+import { createRenderer } from '../lib/renderer.js';
+import type { CommandResult, DoctorResult, HealthCheck } from '../types/command-results.js';
 import { detectOutputMode } from '../utils/env.js';
-
-const formatter = new OutputFormatter(detectOutputMode());
-
-interface HealthCheck {
-  name: string;
-  status: 'pass' | 'fail' | 'warn';
-  message: string;
-}
 
 /**
  * Doctor command - Run health checks and verify installation
  */
 export async function doctorCommand(): Promise<void> {
-  console.log(formatter.info('🏥 Running Health Checks...\n'));
+  const mode = detectOutputMode();
+  const formatter = new OutputFormatter(mode === 'ai' || mode === 'json' ? 'ai' : 'user');
+  const renderer = createRenderer(mode === 'json' ? 'json' : mode === 'ai' ? 'ai' : 'user', formatter);
 
   const checks: HealthCheck[] = [];
 
@@ -130,38 +126,29 @@ export async function doctorCommand(): Promise<void> {
     }
   }
 
-  // Display results
-  let hasFailures = false;
-  let hasWarnings = false;
-
-  for (const check of checks) {
-    const icon = check.status === 'pass' ? '✅' : check.status === 'warn' ? '⚠️' : '❌';
-    const color =
-      check.status === 'pass'
-        ? formatter.success.bind(formatter)
-        : check.status === 'warn'
-          ? formatter.warning.bind(formatter)
-          : formatter.error.bind(formatter);
-
-    console.log(color(`${icon} ${check.name}`));
-    console.log(`   ${check.message}\n`);
-
-    if (check.status === 'fail') hasFailures = true;
-    if (check.status === 'warn') hasWarnings = true;
+  // Determine overall status
+  let overallStatus: 'healthy' | 'warnings' | 'failed' = 'healthy';
+  if (checks.some((c) => c.status === 'fail')) {
+    overallStatus = 'failed';
+  } else if (checks.some((c) => c.status === 'warn')) {
+    overallStatus = 'warnings';
   }
 
-  // Summary
-  console.log(formatter.info('━'.repeat(60)));
-  if (hasFailures) {
-    console.log(formatter.error('\n❌ Health check failed'));
-    console.log(formatter.info('Fix the issues above and run `claude-docs doctor` again\n'));
+  // Build result
+  const result: CommandResult<DoctorResult> = {
+    success: overallStatus !== 'failed',
+    data: {
+      overallStatus,
+      checks,
+    },
+  };
+
+  // Render and output
+  const output = renderer.renderDoctor(result);
+  console.log(output);
+
+  // Exit with error code if failed
+  if (overallStatus === 'failed') {
     process.exit(1);
-  }
-  if (hasWarnings) {
-    console.log(formatter.warning('\n⚠️  Health check passed with warnings'));
-    console.log(formatter.info('Warnings are normal for fresh installations\n'));
-  } else {
-    console.log(formatter.success('\n✅ All health checks passed!'));
-    console.log(formatter.info('Your installation is healthy and ready to use\n'));
   }
 }

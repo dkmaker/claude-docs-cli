@@ -69,7 +69,65 @@ Current version: ${CLI_VERSION}
 `);
 }
 
-export function main() {
+/**
+ * Show beautiful help screen with ASCII art in user mode
+ */
+async function showUserHelp(): Promise<void> {
+  const asciiArt = await import('./lib/ascii-art.js');
+  const boxDrawing = await import('./lib/box-drawing.js');
+  const formatter = new OutputFormatter('user');
+
+  let output = '';
+
+  // ASCII art banner
+  output += asciiArt.getWelcomeBanner();
+  output += '\n';
+
+  // Commands header
+  output += boxDrawing.createHeaderBox('📚 Available Commands');
+  output += '\n';
+
+  // Commands table
+  const headers = [formatter.bold('Command'), formatter.bold('Description')];
+  const rows = [
+    [formatter.cyan('list'), 'List all documentation or sections'],
+    [formatter.cyan('get'), 'Retrieve a documentation section'],
+    [formatter.cyan('search'), 'Search across all documentation'],
+    [formatter.cyan('update'), 'Manage documentation downloads'],
+    [formatter.cyan('cache'), 'Manage documentation cache'],
+    [formatter.cyan('doctor'), 'Run health checks'],
+  ];
+
+  output += boxDrawing.createTable(headers, rows, 'light');
+  output += '\n';
+
+  output += formatter.dim('Options:') + '\n';
+  output += formatter.dim('  -v, --version    Display version') + '\n';
+  output += formatter.dim('  -h, --help       Display help') + '\n';
+  output += formatter.dim('  --output <fmt>   Output format (json, markdown)') + '\n\n';
+
+  // Quick start box
+  const tips = [
+    '',
+    formatter.bold('  Quick Start:'),
+    '',
+    formatter.success('  ▸') + ' List all docs:      ' + formatter.cyan('claude-docs list'),
+    formatter.success('  ▸') + ' Get a section:      ' + formatter.cyan('claude-docs get quickstart'),
+    formatter.success('  ▸') + ' Search:             ' + formatter.cyan('claude-docs search "MCP servers"'),
+    formatter.success('  ▸') + ' Check for updates:  ' + formatter.cyan('claude-docs update'),
+    '',
+  ];
+
+  output += boxDrawing.createInfoBox(tips, 60);
+  output += '\n';
+
+  output += formatter.warning('💡 Tip:') + formatter.dim(' Run any command with --help for detailed usage') + '\n\n';
+  output += formatter.dim(`Version: ${CLI_VERSION}`) + '\n';
+
+  console.log(output);
+}
+
+export async function main() {
   // Pre-parse to extract --output flag
   const outputFlagIndex = process.argv.indexOf('--output');
   if (outputFlagIndex !== -1 && process.argv[outputFlagIndex + 1]) {
@@ -192,10 +250,10 @@ export function main() {
 
   // Show help by default when no arguments provided
   if (process.argv.length === 2) {
-    if (mode === 'ai') {
+    if (mode === 'ai' || mode === 'json') {
       showAIHelp();
     } else {
-      program.outputHelp();
+      await showUserHelp();
     }
     process.exit(0);
   }
