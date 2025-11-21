@@ -1,0 +1,1 @@
+https://github.com/dkmaker/claude-docs-cli/releases/download/v1.1.0/claude-docs-1.1.0.tgz
