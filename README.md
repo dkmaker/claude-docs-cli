@@ -9,15 +9,15 @@ Claude Code Documentation Manager - Node.js CLI
 Install the latest version directly from GitHub Releases:
 
 ```bash
-# Install latest version
-npm install $(curl -s https://raw.githubusercontent.com/OWNER/REPO/main/LATEST_RELEASE.txt)
+# Install latest version globally
+npm install -g $(curl -s https://raw.githubusercontent.com/dkmaker/claude-docs-cli/main/LATEST_RELEASE.txt)
 ```
 
 Or install a specific version:
 
 ```bash
-# Install specific version (e.g., v1.2.3)
-npm install https://github.com/OWNER/REPO/releases/download/v1.2.3/claude-docs-1.2.3.tgz
+# Install specific version globally (e.g., v1.2.3)
+npm install -g https://github.com/dkmaker/claude-docs-cli/releases/download/v1.2.3/claude-docs-1.2.3.tgz
 ```
 
 Verify installation:
@@ -307,7 +307,7 @@ When a version bump PR is merged:
 4. ✅ Tarball uploaded to release
 5. ✅ LATEST_RELEASE.txt updated
 
-View releases at: `https://github.com/OWNER/REPO/releases`
+View releases at: `https://github.com/dkmaker/claude-docs-cli/releases`
 
 ## License
 
