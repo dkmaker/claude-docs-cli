@@ -52,8 +52,8 @@ jobs:
         run: pnpm type-check
         continue-on-error: true  # Allow continuation for now (existing type errors)
 
-      - name: Run tests
-        run: pnpm test:run
-
       - name: Run build
         run: pnpm run build
+
+      - name: Run tests
+        run: pnpm test:run

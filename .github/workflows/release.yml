@@ -51,8 +51,8 @@ jobs:
       - name: Run quality gates
         run: |
           pnpm run lint
-          pnpm test:run
           pnpm run build
+          pnpm test:run
 
       - name: Create Release Pull Request or Publish
         id: changesets
