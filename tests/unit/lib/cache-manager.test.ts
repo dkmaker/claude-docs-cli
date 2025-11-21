@@ -114,8 +114,10 @@ describe('Cache Manager', () => {
       // Extract timestamp from metadata
       const timestampMatch = cached.match(/"timestamp":\s*(\d+)/);
       expect(timestampMatch).not.toBeNull();
+      expect(timestampMatch).toBeDefined();
+      expect(timestampMatch?.[1]).toBeDefined();
 
-      const timestamp = Number.parseInt(timestampMatch?.[1], 10);
+      const timestamp = Number.parseInt(timestampMatch?.[1] ?? '0', 10);
       expect(timestamp).toBeGreaterThanOrEqual(beforeWrite);
       expect(timestamp).toBeLessThanOrEqual(afterWrite);
     });

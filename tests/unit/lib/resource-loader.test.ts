@@ -263,10 +263,11 @@ describe('Resource Loader', () => {
 
         // Verify structure of first category
         const firstCategory = config.categories[0];
-        expect(firstCategory.name).toBeDefined();
-        expect(firstCategory.slug).toBeDefined();
-        expect(firstCategory.description).toBeDefined();
-        expect(Array.isArray(firstCategory.docs)).toBe(true);
+        expect(firstCategory).toBeDefined();
+        expect(firstCategory?.name).toBeDefined();
+        expect(firstCategory?.slug).toBeDefined();
+        expect(firstCategory?.description).toBeDefined();
+        expect(Array.isArray(firstCategory?.docs)).toBe(true);
       });
 
       it('should write fresh config to cache directory', async () => {
@@ -343,8 +344,9 @@ describe('Resource Loader', () => {
         // Mock http client to fail (so we know cache was used)
         vi.spyOn(httpClient, 'fetchWithRetry').mockResolvedValue({
           success: false,
-          content: null,
+          content: undefined,
           error: 'Network error',
+          retries: 0,
         });
 
         // Load config - should use cache without calling remote
@@ -364,8 +366,9 @@ describe('Resource Loader', () => {
         // Mock remote fetch failure
         vi.spyOn(httpClient, 'fetchWithRetry').mockResolvedValue({
           success: false,
-          content: null,
+          content: undefined,
           error: 'Network error',
+          retries: 0,
         });
 
         // The actual bundled file should exist in dist/
@@ -383,8 +386,9 @@ describe('Resource Loader', () => {
         // Mock remote fetch with network error
         vi.spyOn(httpClient, 'fetchWithRetry').mockResolvedValue({
           success: false,
-          content: null,
+          content: undefined,
           error: 'Connection timeout',
+          retries: 0,
         });
 
         // Should not throw and should return valid config (from bundled)
@@ -398,7 +402,8 @@ describe('Resource Loader', () => {
         vi.spyOn(httpClient, 'fetchWithRetry').mockResolvedValue({
           success: true,
           content: 'not valid json',
-          error: null,
+          error: undefined,
+          retries: 0,
         });
 
         // Should handle error and fallback to bundled
@@ -427,7 +432,8 @@ describe('Resource Loader', () => {
         vi.spyOn(httpClient, 'fetchWithRetry').mockResolvedValue({
           success: true,
           content: JSON.stringify(invalidConfig),
-          error: null,
+          error: undefined,
+          retries: 0,
         });
 
         // Should fallback to bundled version since remote is invalid
@@ -452,8 +458,9 @@ describe('Resource Loader', () => {
         // Mock remote fetch to fail so bundled is used
         vi.spyOn(httpClient, 'fetchWithRetry').mockResolvedValue({
           success: false,
-          content: null,
+          content: undefined,
           error: 'Network error',
+          retries: 0,
         });
 
         // Load config - should ignore invalid cache and use bundled fallback
@@ -482,8 +489,9 @@ describe('Resource Loader', () => {
         // Mock remote fetch to fail so bundled is used
         vi.spyOn(httpClient, 'fetchWithRetry').mockResolvedValue({
           success: false,
-          content: null,
+          content: undefined,
           error: 'Network error',
+          retries: 0,
         });
 
         // Load config - should not use expired cache
@@ -500,7 +508,8 @@ describe('Resource Loader', () => {
         vi.spyOn(httpClient, 'fetchWithRetry').mockResolvedValue({
           success: true,
           content: JSON.stringify(validConfig),
-          error: null,
+          error: undefined,
+          retries: 0,
         });
 
         const config = await loadResourceConfig();

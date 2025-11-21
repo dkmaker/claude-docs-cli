@@ -50,7 +50,6 @@ jobs:
 
       - name: Run type checking
         run: pnpm type-check
-        continue-on-error: true  # Allow continuation for now (existing type errors)
 
       - name: Run build
         run: pnpm run build
