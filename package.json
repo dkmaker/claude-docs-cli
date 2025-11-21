@@ -1,6 +1,6 @@
 {
   "name": "claude-docs",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Claude Code Documentation Manager - Node.js CLI",
   "private": true,
   "type": "module",
@@ -29,10 +29,20 @@
     "version": "changeset version",
     "release": "pnpm run build && changeset publish"
   },
-  "keywords": ["cli", "documentation", "claude", "markdown"],
+  "keywords": [
+    "cli",
+    "documentation",
+    "claude",
+    "markdown"
+  ],
   "author": "",
   "license": "MIT",
-  "files": ["dist/**/*.js", "dist/claude-docs-resources.json", "README.md", "LICENSE"],
+  "files": [
+    "dist/**/*.js",
+    "dist/claude-docs-resources.json",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=22.0.0",
     "pnpm": ">=10.0.0"
