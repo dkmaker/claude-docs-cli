@@ -220,4 +220,34 @@ export class OutputFormatter {
 
     return `${headerRow}\n${rows}\n`;
   }
+
+  /**
+   * Bold text
+   */
+  bold(text: string): string {
+    if (this.mode === 'ai') {
+      return `**${text}**`;
+    }
+    return this.isTTY ? `\x1b[1m${text}\x1b[0m` : text;
+  }
+
+  /**
+   * Cyan/blue colored text
+   */
+  cyan(text: string): string {
+    if (this.mode === 'ai') {
+      return `\`${text}\``;
+    }
+    return this.isTTY ? `\x1b[36m${text}\x1b[0m` : text;
+  }
+
+  /**
+   * Dimmed/gray text
+   */
+  dim(text: string): string {
+    if (this.mode === 'ai') {
+      return text; // No dimming in AI mode
+    }
+    return this.isTTY ? `\x1b[2m${text}\x1b[0m` : text;
+  }
 }

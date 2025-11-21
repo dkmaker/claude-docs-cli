@@ -1,9 +1,10 @@
 /**
  * Output mode for the CLI - determines formatting and verbosity
- * - 'ai': Minimal markdown output for AI agents (CLAUDECODE=1)
+ * - 'ai': Structured markdown output for AI agents (CLAUDECODE=1)
  * - 'user': Rich ANSI-colored output for human users (default)
+ * - 'json': Raw JSON output for programmatic consumption
  */
-export type OutputMode = 'ai' | 'user';
+export type OutputMode = 'ai' | 'user' | 'json';
 
 /**
  * Source that determined the output mode

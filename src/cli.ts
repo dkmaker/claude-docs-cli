@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import { cacheClearCommand, cacheInfoCommand, cacheWarmCommand } from './commands/cache-command.js';
+import { doctorCommand } from './commands/doctor-command.js';
 import { getCommand } from './commands/get-command.js';
 import { listCommand } from './commands/list-command.js';
 import { searchCommand } from './commands/search-command.js';
@@ -15,8 +16,127 @@ import { OutputFormatter } from './lib/output-formatter.js';
 import { CLI_DESCRIPTION, CLI_NAME, CLI_VERSION } from './utils/config.js';
 import { detectOutputMode } from './utils/env.js';
 
-export function main() {
-  // Initialize dual-mode output system
+/**
+ * Show AI-friendly help when no arguments provided in AI mode
+ */
+function showAIHelp(): void {
+  console.log(`# ${CLI_NAME} - ${CLI_DESCRIPTION}
+
+## Available Commands
+
+| Command | Arguments | Description |
+|---------|-----------|-------------|
+| list | [doc] | List all documentation or sections within a document |
+| get | <slug> | Retrieve a documentation section (supports slug#anchor) |
+| search | <query> | Search across all documentation |
+
+## Usage Examples
+
+\`\`\`bash
+# List all available documentation
+claude-docs list
+
+# List sections in a specific document
+claude-docs list quickstart
+
+# Get a documentation section
+claude-docs get cli-reference
+
+# Get a specific section with anchor
+claude-docs get settings#hooks
+
+# Search documentation
+claude-docs search "MCP servers"
+\`\`\`
+
+## Output Modes
+
+This tool detects it's running in AI mode (CLAUDECODE=1) and provides structured markdown output optimized for LLM parsing.
+
+All commands return data in consistent formats with:
+- Markdown tables for structured data
+- Clear section headers
+- Metadata footers with data age warnings
+- Actionable suggestions
+
+## Data Freshness
+
+If documentation is older than 24 hours, commands will display a warning with update instructions.
+
+## Version
+
+Current version: ${CLI_VERSION}
+`);
+}
+
+/**
+ * Show beautiful help screen with ASCII art in user mode
+ */
+async function showUserHelp(): Promise<void> {
+  const asciiArt = await import('./lib/ascii-art.js');
+  const boxDrawing = await import('./lib/box-drawing.js');
+  const formatter = new OutputFormatter('user');
+
+  let output = '';
+
+  // ASCII art banner
+  output += asciiArt.getWelcomeBanner();
+  output += '\n';
+
+  // Commands header
+  output += boxDrawing.createHeaderBox('📚 Available Commands');
+  output += '\n';
+
+  // Commands table
+  const headers = [formatter.bold('Command'), formatter.bold('Description')];
+  const rows = [
+    [formatter.cyan('list'), 'List all documentation or sections'],
+    [formatter.cyan('get'), 'Retrieve a documentation section'],
+    [formatter.cyan('search'), 'Search across all documentation'],
+    [formatter.cyan('update'), 'Manage documentation downloads'],
+    [formatter.cyan('cache'), 'Manage documentation cache'],
+    [formatter.cyan('doctor'), 'Run health checks'],
+  ];
+
+  output += boxDrawing.createTable(headers, rows, 'light');
+  output += '\n';
+
+  output += `${formatter.dim('Options:')}\n`;
+  output += `${formatter.dim('  -v, --version    Display version')}\n`;
+  output += `${formatter.dim('  -h, --help       Display help')}\n`;
+  output += `${formatter.dim('  --output <fmt>   Output format (json, markdown)')}\n\n`;
+
+  // Quick start box
+  const tips = [
+    '',
+    formatter.bold('  Quick Start:'),
+    '',
+    `${formatter.success('  ▸')} List all docs:      ${formatter.cyan('claude-docs list')}`,
+    `${formatter.success('  ▸')} Get a section:      ${formatter.cyan('claude-docs get quickstart')}`,
+    `${formatter.success('  ▸')} Search:             ${formatter.cyan('claude-docs search "MCP servers"')}`,
+    `${formatter.success('  ▸')} Check for updates:  ${formatter.cyan('claude-docs update')}`,
+    '',
+  ];
+
+  output += boxDrawing.createInfoBox(tips, 60);
+  output += '\n';
+
+  output += `${
+    formatter.warning('💡 Tip:') + formatter.dim(' Run any command with --help for detailed usage')
+  }\n\n`;
+  output += `${formatter.dim(`Version: ${CLI_VERSION}`)}\n`;
+
+  console.log(output);
+}
+
+export async function main() {
+  // Pre-parse to extract --output flag
+  const outputFlagIndex = process.argv.indexOf('--output');
+  if (outputFlagIndex !== -1 && process.argv[outputFlagIndex + 1]) {
+    process.env.CLI_OUTPUT_FORMAT = process.argv[outputFlagIndex + 1];
+  }
+
+  // Initialize dual-mode output system (now can detect --output flag)
   const mode = detectOutputMode();
   const formatter = new OutputFormatter(mode);
 
@@ -26,7 +146,8 @@ export function main() {
     .name(CLI_NAME)
     .version(CLI_VERSION, '-v, --version', 'Display version information')
     .description(CLI_DESCRIPTION)
-    .helpOption('-h, --help', 'Display help information');
+    .helpOption('-h, --help', 'Display help information')
+    .option('--output <format>', 'Output format: json, markdown (default: auto-detect)');
 
   // Update command with subcommands
   const updateCmd = program
@@ -122,23 +243,20 @@ export function main() {
   // Advanced commands (only in user mode)
   if (mode === 'user') {
     program
-      .command('status')
-      .description('Show cache and documentation status')
+      .command('doctor')
+      .description('Run health checks and verify installation')
       .action(() => {
-        console.log(formatter.warning('Status command not yet implemented'));
-      });
-
-    program
-      .command('reset-cache')
-      .description('Clear documentation cache')
-      .action(() => {
-        console.log(formatter.warning('Reset cache command not yet implemented'));
+        doctorCommand();
       });
   }
 
   // Show help by default when no arguments provided
   if (process.argv.length === 2) {
-    program.outputHelp();
+    if (mode === 'ai' || mode === 'json') {
+      showAIHelp();
+    } else {
+      await showUserHelp();
+    }
     process.exit(0);
   }
 

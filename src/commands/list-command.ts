@@ -1,14 +1,16 @@
 import { getCachedDocument, readCache, writeCache } from '../lib/cache-manager.js';
 import { fileExists } from '../lib/file-ops.js';
 import { OutputFormatter } from '../lib/output-formatter.js';
+import { createRenderer } from '../lib/renderer.js';
 import { loadResourceConfig } from '../lib/resource-loader.js';
+import type {
+  CategoryGroup,
+  CommandResult,
+  ListItem,
+  ListResult,
+} from '../types/command-results.js';
 import { detectOutputMode } from '../utils/env.js';
 import { getDocPath } from '../utils/path-resolver.js';
-
-/**
- * List command - list available documentation
- * Implements caching for fast repeated access
- */
 
 /**
  * Generate cache key for list output
@@ -19,121 +21,136 @@ function getListCacheKey(docSlug?: string): string {
 }
 
 /**
- * List all available documentation
- * Uses cache to avoid regenerating on every call
+ * List command - list available documentation
+ * Returns structured JSON data, rendered based on output mode
  */
 export async function listCommand(docSlug?: string): Promise<void> {
-  // Initialize formatter for error messages
-  const formatter = new OutputFormatter(detectOutputMode());
+  const mode = detectOutputMode();
+  const formatter = new OutputFormatter(mode === 'ai' || mode === 'json' ? 'ai' : 'user');
+  const renderer = createRenderer(
+    mode === 'json' ? 'json' : mode === 'ai' ? 'ai' : 'user',
+    formatter,
+  );
 
   try {
     // T108: Show 24-hour update reminder
     const { checkUpdateReminder } = await import('./update-command.js');
     await checkUpdateReminder();
 
-    // Try cache first
+    // Try cache first (store as JSON)
     const cacheKey = getListCacheKey(docSlug);
     const cached = await readCache(cacheKey);
 
+    let result: CommandResult<ListResult>;
+
     if (cached) {
-      console.log(cached);
-      return;
-    }
-
-    // Cache miss - generate output
-    const config = await loadResourceConfig();
-    let output: string;
-
-    if (docSlug) {
-      output = await generateDocumentSectionsList(docSlug, config);
+      // Cache hit - parse JSON
+      result = JSON.parse(cached);
     } else {
-      output = await generateFullDocumentationList(config);
+      // Cache miss - generate data
+      const config = await loadResourceConfig();
+
+      if (docSlug) {
+        result = await generateDocumentSectionsData(docSlug, config);
+      } else {
+        result = await generateFullDocumentationData(config);
+      }
+
+      // Cache the JSON
+      await writeCache(cacheKey, JSON.stringify(result), 'list-command');
     }
 
-    // Cache the output
-    await writeCache(cacheKey, output, 'list-command');
-
-    // Display output
+    // Render and output
+    const output = renderer.renderList(result);
     console.log(output);
   } catch (error) {
-    console.error(
-      `\n${formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`)}`,
-    );
+    const errorResult: CommandResult<never> = {
+      success: false,
+      error: {
+        code: 'LIST_ERROR',
+        message: error instanceof Error ? error.message : String(error),
+        suggestion: "Run 'claude-docs list' to see all available documents",
+      },
+    };
+
+    const output = renderer.renderError(errorResult);
+    console.error(output);
     process.exit(1);
   }
 }
 
 /**
- * Generate full documentation list in table format
- * Matches the bash script output format
+ * Generate full documentation list data (JSON)
  */
-async function generateFullDocumentationList(
+async function generateFullDocumentationData(
   config: Awaited<ReturnType<typeof loadResourceConfig>>,
-): Promise<string> {
-  const lines: string[] = [];
+): Promise<CommandResult<ListResult>> {
   const { stat } = await import('node:fs/promises');
-
-  lines.push('# Documentation List');
-  lines.push('');
-  lines.push('Below is a list of all available documentation');
-  lines.push('');
-  lines.push('**To see the structure of a specific document, run:** `claude-docs list <slug>`');
-  lines.push('');
-  lines.push('**To read a document with replaced links, run:** `claude-docs get <slug>`');
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  const items: ListItem[] = [];
+  const categories: CategoryGroup[] = [];
 
   for (const category of config.categories) {
-    lines.push(`## ${category.name}`);
-    lines.push('');
-    lines.push('| Slug | Title | Description | Last updated |');
-    lines.push('|------|-------|-------------|--------------|');
+    const categoryDocs: ListItem[] = [];
 
     for (const doc of category.docs) {
       const slug = doc.filename.replace('.md', '');
       const filePath = getDocPath(doc.filename);
 
-      // Get file stats for last updated time
-      let lastUpdated = 'Not downloaded';
+      // Get section count by reading file
+      let sectionCount = 0;
       try {
         if (await fileExists(filePath)) {
-          const stats = await stat(filePath);
-          const date = new Date(stats.mtimeMs);
-          lastUpdated = date
-            .toLocaleString('en-GB', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            })
-            .replace(',', '');
+          const content = await getCachedDocument(doc.filename, doc.url);
+          sectionCount = (content.match(/^#{1,6}\s/gm) || []).length;
         }
       } catch {
         // Keep default
       }
 
-      lines.push(`| ${slug} | ${doc.title} | ${doc.description} | ${lastUpdated} |`);
+      const item: ListItem = {
+        slug,
+        title: doc.title,
+        sectionCount,
+        category: category.name,
+      };
+
+      items.push(item);
+      categoryDocs.push(item);
     }
 
-    lines.push('');
+    categories.push({
+      name: category.name,
+      docs: categoryDocs,
+    });
   }
 
-  return lines.join('\n');
+  // Get data age
+  const dataAge = await calculateDataAge();
+  const lastUpdate = await getLastUpdateTime();
+
+  return {
+    success: true,
+    data: {
+      type: 'list_all',
+      items,
+      totalCount: items.length,
+      categories,
+    },
+    metadata: {
+      dataAge,
+      lastUpdate,
+      timestamp: new Date().toISOString(),
+    },
+  };
 }
 
 /**
- * Generate document sections list (TOC)
- * Matches bash script format: bullet list with inline commands
+ * Generate document sections list data (TOC as JSON)
  */
-async function generateDocumentSectionsList(
+async function generateDocumentSectionsData(
   slugOrFilename: string,
   config: Awaited<ReturnType<typeof loadResourceConfig>>,
-): Promise<string> {
-  const lines: string[] = [];
-
+): Promise<CommandResult<ListResult>> {
   // Find document
   let doc = null;
 
@@ -152,24 +169,22 @@ async function generateDocumentSectionsList(
   }
 
   if (!doc) {
-    throw new Error(
-      `Document not found: ${slugOrFilename}\n💡 Use \`claude-docs list\` to see all available documents`,
-    );
+    return {
+      success: false,
+      error: {
+        code: 'DOC_NOT_FOUND',
+        message: `Document not found: ${slugOrFilename}`,
+        suggestion: "Run 'claude-docs list' to see all available documents",
+      },
+    };
   }
 
   // Get document content
   const content = await getCachedDocument(doc.filename, doc.url);
   const contentLines = content.split('\n');
 
-  // Get first heading for title
-  const firstHeading = contentLines.find((line) => line.match(/^# /));
-  const title = firstHeading ? firstHeading.replace(/^# /, '') : doc.title;
-
-  const slug = doc.filename.replace('.md', '');
-
-  lines.push(`# Index of ${title} (${slug})`);
-  lines.push('');
-
+  // Extract sections
+  const items: ListItem[] = [];
   let isFirstHeading = true;
 
   for (const line of contentLines) {
@@ -184,20 +199,74 @@ async function generateDocumentSectionsList(
         continue;
       }
 
-      // Generate slug for anchor
+      // Generate anchor slug for this heading
       const anchorSlug = heading
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
 
-      // Calculate indentation (2 spaces per level, starting from level 2 as base)
-      const indentCount = (level - 2) * 2;
-      const indent = indentCount > 0 ? ' '.repeat(indentCount) : '';
-
-      // Output TOC line with CLI command syntax (bash format)
-      lines.push(`${indent}- ${heading} - Read with \`claude-docs get ${slug}#${anchorSlug}\``);
+      items.push({
+        slug: doc.filename.replace('.md', ''),
+        title: heading,
+        level,
+        anchor: anchorSlug,
+      });
     }
   }
 
-  return lines.join('\n');
+  const dataAge = await calculateDataAge();
+  const lastUpdate = await getLastUpdateTime();
+
+  return {
+    success: true,
+    data: {
+      type: 'list_sections',
+      items,
+      totalCount: items.length,
+    },
+    metadata: {
+      dataAge,
+      lastUpdate,
+      timestamp: new Date().toISOString(),
+    },
+  };
+}
+
+/**
+ * Calculate data age in hours since last update
+ */
+async function calculateDataAge(): Promise<number> {
+  try {
+    const { CHANGELOG_FILE } = await import('../utils/path-resolver.js');
+    const { stat } = await import('node:fs/promises');
+
+    if (await fileExists(CHANGELOG_FILE)) {
+      const stats = await stat(CHANGELOG_FILE);
+      const ageMs = Date.now() - stats.mtimeMs;
+      return Math.floor(ageMs / (1000 * 60 * 60)); // Convert to hours
+    }
+  } catch {
+    // Ignore errors
+  }
+
+  return 0; // Unknown
+}
+
+/**
+ * Get last update timestamp
+ */
+async function getLastUpdateTime(): Promise<string | undefined> {
+  try {
+    const { CHANGELOG_FILE } = await import('../utils/path-resolver.js');
+    const { stat } = await import('node:fs/promises');
+
+    if (await fileExists(CHANGELOG_FILE)) {
+      const stats = await stat(CHANGELOG_FILE);
+      return new Date(stats.mtimeMs).toISOString();
+    }
+  } catch {
+    // Ignore errors
+  }
+
+  return undefined;
 }
