@@ -13,7 +13,10 @@ import { detectOutputMode } from '../utils/env.js';
 export async function doctorCommand(): Promise<void> {
   const mode = detectOutputMode();
   const formatter = new OutputFormatter(mode === 'ai' || mode === 'json' ? 'ai' : 'user');
-  const renderer = createRenderer(mode === 'json' ? 'json' : mode === 'ai' ? 'ai' : 'user', formatter);
+  const renderer = createRenderer(
+    mode === 'json' ? 'json' : mode === 'ai' ? 'ai' : 'user',
+    formatter,
+  );
 
   const checks: HealthCheck[] = [];
 
