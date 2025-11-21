@@ -16,8 +16,67 @@ import { OutputFormatter } from './lib/output-formatter.js';
 import { CLI_DESCRIPTION, CLI_NAME, CLI_VERSION } from './utils/config.js';
 import { detectOutputMode } from './utils/env.js';
 
+/**
+ * Show AI-friendly help when no arguments provided in AI mode
+ */
+function showAIHelp(): void {
+  console.log(`# ${CLI_NAME} - ${CLI_DESCRIPTION}
+
+## Available Commands
+
+| Command | Arguments | Description |
+|---------|-----------|-------------|
+| list | [doc] | List all documentation or sections within a document |
+| get | <slug> | Retrieve a documentation section (supports slug#anchor) |
+| search | <query> | Search across all documentation |
+
+## Usage Examples
+
+\`\`\`bash
+# List all available documentation
+claude-docs list
+
+# List sections in a specific document
+claude-docs list quickstart
+
+# Get a documentation section
+claude-docs get cli-reference
+
+# Get a specific section with anchor
+claude-docs get settings#hooks
+
+# Search documentation
+claude-docs search "MCP servers"
+\`\`\`
+
+## Output Modes
+
+This tool detects it's running in AI mode (CLAUDECODE=1) and provides structured markdown output optimized for LLM parsing.
+
+All commands return data in consistent formats with:
+- Markdown tables for structured data
+- Clear section headers
+- Metadata footers with data age warnings
+- Actionable suggestions
+
+## Data Freshness
+
+If documentation is older than 24 hours, commands will display a warning with update instructions.
+
+## Version
+
+Current version: ${CLI_VERSION}
+`);
+}
+
 export function main() {
-  // Initialize dual-mode output system
+  // Pre-parse to extract --output flag
+  const outputFlagIndex = process.argv.indexOf('--output');
+  if (outputFlagIndex !== -1 && process.argv[outputFlagIndex + 1]) {
+    process.env.CLI_OUTPUT_FORMAT = process.argv[outputFlagIndex + 1];
+  }
+
+  // Initialize dual-mode output system (now can detect --output flag)
   const mode = detectOutputMode();
   const formatter = new OutputFormatter(mode);
 
@@ -27,7 +86,8 @@ export function main() {
     .name(CLI_NAME)
     .version(CLI_VERSION, '-v, --version', 'Display version information')
     .description(CLI_DESCRIPTION)
-    .helpOption('-h, --help', 'Display help information');
+    .helpOption('-h, --help', 'Display help information')
+    .option('--output <format>', 'Output format: json, markdown (default: auto-detect)');
 
   // Update command with subcommands
   const updateCmd = program
@@ -132,7 +192,11 @@ export function main() {
 
   // Show help by default when no arguments provided
   if (process.argv.length === 2) {
-    program.outputHelp();
+    if (mode === 'ai') {
+      showAIHelp();
+    } else {
+      program.outputHelp();
+    }
     process.exit(0);
   }
 

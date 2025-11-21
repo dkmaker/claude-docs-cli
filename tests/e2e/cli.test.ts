@@ -99,8 +99,9 @@ describe('CLI Entry Point', () => {
 
   it('should display default help when no arguments provided', async () => {
     const result = await execCLI([]);
-    expect(result.stdout).toContain('Usage:');
+    // In AI mode shows markdown, in user mode shows "Usage:"
     expect(result.stdout).toContain('claude-docs');
+    expect(result.stdout.length).toBeGreaterThan(50); // Should show meaningful help
     expect(result.exitCode).toBe(0);
   });
 });
