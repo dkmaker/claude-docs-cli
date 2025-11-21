@@ -1,15 +1,15 @@
 import { rm } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  writeCache,
-  readCache,
-  getCachedDocument,
   clearCache,
   getCacheStats,
+  getCachedDocument,
+  readCache,
   warmCache,
+  writeCache,
 } from '../../../src/lib/cache-manager.js';
-import { getCachePath, getDocPath } from '../../../src/utils/path-resolver.js';
 import * as fileOps from '../../../src/lib/file-ops.js';
+import { getCachePath, getDocPath } from '../../../src/utils/path-resolver.js';
 
 describe('Cache Manager', () => {
   let testFilename: string;
@@ -115,7 +115,7 @@ describe('Cache Manager', () => {
       const timestampMatch = cached.match(/"timestamp":\s*(\d+)/);
       expect(timestampMatch).not.toBeNull();
 
-      const timestamp = Number.parseInt(timestampMatch![1], 10);
+      const timestamp = Number.parseInt(timestampMatch?.[1], 10);
       expect(timestamp).toBeGreaterThanOrEqual(beforeWrite);
       expect(timestamp).toBeLessThanOrEqual(afterWrite);
     });
@@ -274,12 +274,9 @@ describe('Cache Manager', () => {
       const cachePath = getCachePath(testFilename);
 
       // Write corrupted JSON in metadata
-      const corruptedCache = [
-        '<!--- CACHE METADATA',
-        '{ invalid json',
-        '-->',
-        testContent,
-      ].join('\n');
+      const corruptedCache = ['<!--- CACHE METADATA', '{ invalid json', '-->', testContent].join(
+        '\n',
+      );
 
       await fileOps.safeWriteFile(cachePath, corruptedCache);
 

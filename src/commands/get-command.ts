@@ -1,9 +1,9 @@
 import { readdir } from 'node:fs/promises';
 import { getCachedDocument } from '../lib/cache-manager.js';
 import { fileExists } from '../lib/file-ops.js';
-import { DOCS_DIR, getDocPath } from '../utils/path-resolver.js';
 import { OutputFormatter } from '../lib/output-formatter.js';
 import { detectOutputMode } from '../utils/env.js';
+import { DOCS_DIR, getDocPath } from '../utils/path-resolver.js';
 
 const formatter = new OutputFormatter(detectOutputMode());
 
@@ -62,7 +62,7 @@ function extractSection(content: string, anchor: string): string | null {
   // Find all heading positions
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (line && line.match(/^#{1,6}\s/)) {
+    if (line?.match(/^#{1,6}\s/)) {
       sectionStart.push(i);
     }
   }
@@ -162,7 +162,9 @@ export async function getCommand(slugWithAnchor: string): Promise<void> {
     // Output content (this will be piped or displayed)
     console.log(output);
   } catch (error) {
-    console.error(formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`));
+    console.error(
+      formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`),
+    );
     process.exit(1);
   }
 }

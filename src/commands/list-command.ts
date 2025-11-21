@@ -1,9 +1,9 @@
 import { getCachedDocument, readCache, writeCache } from '../lib/cache-manager.js';
 import { fileExists } from '../lib/file-ops.js';
-import { loadResourceConfig } from '../lib/resource-loader.js';
 import { OutputFormatter } from '../lib/output-formatter.js';
-import { getDocPath } from '../utils/path-resolver.js';
+import { loadResourceConfig } from '../lib/resource-loader.js';
 import { detectOutputMode } from '../utils/env.js';
+import { getDocPath } from '../utils/path-resolver.js';
 
 /**
  * List command - list available documentation
@@ -56,7 +56,9 @@ export async function listCommand(docSlug?: string): Promise<void> {
     // Display output
     console.log(output);
   } catch (error) {
-    console.error(`\n${formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`)}`);
+    console.error(
+      `\n${formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`)}`,
+    );
     process.exit(1);
   }
 }
@@ -98,14 +100,16 @@ async function generateFullDocumentationList(
         if (await fileExists(filePath)) {
           const stats = await stat(filePath);
           const date = new Date(stats.mtimeMs);
-          lastUpdated = date.toLocaleString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          }).replace(',', '');
+          lastUpdated = date
+            .toLocaleString('en-GB', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })
+            .replace(',', '');
         }
       } catch {
         // Keep default
@@ -170,7 +174,7 @@ async function generateDocumentSectionsList(
 
   for (const line of contentLines) {
     const match = line.match(/^(#{1,6})\s+(.+)$/);
-    if (match && match[1] && match[2]) {
+    if (match?.[1] && match[2]) {
       const level = match[1].length;
       const heading = match[2].trim();
 

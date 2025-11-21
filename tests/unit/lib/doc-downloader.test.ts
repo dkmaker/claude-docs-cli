@@ -3,18 +3,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  downloadDocument,
-  downloadAllDocuments,
-  getDownloadSummary,
   type DownloadOptions,
+  downloadAllDocuments,
+  downloadDocument,
+  getDownloadSummary,
 } from '../../../src/lib/doc-downloader.js';
+import * as fileOps from '../../../src/lib/file-ops.js';
 import type {
   DocumentSection,
-  ResourceConfiguration,
   DownloadProgress,
+  ResourceConfiguration,
 } from '../../../src/types/documentation.js';
 import * as httpClient from '../../../src/utils/http-client.js';
-import * as fileOps from '../../../src/lib/file-ops.js';
 
 describe('Document Downloader', () => {
   let tempDir: string;
@@ -165,9 +165,7 @@ describe('Document Downloader', () => {
       });
 
       // Mock file write failure
-      const writeSpy = vi.spyOn(fileOps, 'safeWriteFile').mockRejectedValue(
-        new Error('Disk full'),
-      );
+      const writeSpy = vi.spyOn(fileOps, 'safeWriteFile').mockRejectedValue(new Error('Disk full'));
 
       const result = await downloadDocument(mockDoc);
 

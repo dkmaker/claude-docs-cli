@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  generateDiff,
-  compareDocuments,
-  getDiffSummary,
   type DiffResult,
+  compareDocuments,
+  generateDiff,
+  getDiffSummary,
 } from '../../../src/lib/doc-differ.js';
 
 describe('Document Differ', () => {

@@ -10,7 +10,7 @@ describe('detectOutputMode', () => {
 
   afterEach(() => {
     if (originalEnv === undefined) {
-      delete process.env.CLAUDECODE;
+      process.env.CLAUDECODE = undefined;
     } else {
       process.env.CLAUDECODE = originalEnv;
     }
@@ -22,7 +22,7 @@ describe('detectOutputMode', () => {
   });
 
   it('should return "user" when CLAUDECODE is not set', () => {
-    delete process.env.CLAUDECODE;
+    process.env.CLAUDECODE = undefined;
     expect(detectOutputMode()).toBe('user');
   });
 
@@ -49,7 +49,7 @@ describe('detectOutputModeWithSource', () => {
 
   afterEach(() => {
     if (originalEnv === undefined) {
-      delete process.env.CLAUDECODE;
+      process.env.CLAUDECODE = undefined;
     } else {
       process.env.CLAUDECODE = originalEnv;
     }
@@ -62,7 +62,7 @@ describe('detectOutputModeWithSource', () => {
   });
 
   it('should return user mode with default source when CLAUDECODE is not set', () => {
-    delete process.env.CLAUDECODE;
+    process.env.CLAUDECODE = undefined;
     const result = detectOutputModeWithSource();
     expect(result).toEqual({ mode: 'user', source: 'default' });
   });

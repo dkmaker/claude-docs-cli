@@ -1,5 +1,5 @@
-import { formatSearchResults, searchDocuments } from '../lib/search-engine.js';
 import { OutputFormatter } from '../lib/output-formatter.js';
+import { formatSearchResults, searchDocuments } from '../lib/search-engine.js';
 import { detectOutputMode } from '../utils/env.js';
 
 const formatter = new OutputFormatter(detectOutputMode());
@@ -47,10 +47,14 @@ export async function searchCommand(query: string): Promise<void> {
     console.log(formatter.info(`\nSearch completed in ${endTime - startTime}ms`));
 
     if (results.length > 0) {
-      console.log(formatter.info('\nUse `claude-docs get <section>` to retrieve full documentation'));
+      console.log(
+        formatter.info('\nUse `claude-docs get <section>` to retrieve full documentation'),
+      );
     }
   } catch (error) {
-    console.error(formatter.error(`\nError: ${error instanceof Error ? error.message : String(error)}`));
+    console.error(
+      formatter.error(`\nError: ${error instanceof Error ? error.message : String(error)}`),
+    );
     process.exit(1);
   }
 }

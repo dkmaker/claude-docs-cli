@@ -1,26 +1,34 @@
-import { readFile, rm, readdir } from 'node:fs/promises';
+import { readFile, readdir, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import { warmCache } from '../lib/cache-manager.js';
-import { downloadAllDocuments, getDownloadSummary, downloadDocument } from '../lib/doc-downloader.js';
-import { ensureDir, fileExists, safeWriteFile, safeReadFile } from '../lib/file-ops.js';
-import { OutputFormatter } from '../lib/output-formatter.js';
-import type { ResourceConfiguration, DocumentSection, DownloadResult } from '../types/documentation.js';
-import { loadResourceConfig } from '../lib/resource-loader.js';
-import type { DownloadProgress } from '../types/documentation.js';
+import { compareDocuments, generateDiff } from '../lib/doc-differ.js';
 import {
+  downloadAllDocuments,
+  downloadDocument,
+  getDownloadSummary,
+} from '../lib/doc-downloader.js';
+import { ensureDir, fileExists, safeReadFile, safeWriteFile } from '../lib/file-ops.js';
+import { OutputFormatter } from '../lib/output-formatter.js';
+import { loadResourceConfig } from '../lib/resource-loader.js';
+import type {
+  DocumentSection,
+  DownloadResult,
+  ResourceConfiguration,
+} from '../types/documentation.js';
+import type { DownloadProgress } from '../types/documentation.js';
+import { detectOutputMode } from '../utils/env.js';
+import {
+  CHANGELOG_FILE,
   DOCS_DIR,
   LAST_UPDATE_FILE,
   MISSING_DOCS_FILE,
+  PENDING_DIFFS_DIR,
   PENDING_DIR,
   PENDING_DOWNLOADS_DIR,
-  PENDING_DIFFS_DIR,
-  CHANGELOG_FILE,
   getDocPath,
-  getPendingDownloadPath,
   getPendingDiffPath,
+  getPendingDownloadPath,
 } from '../utils/path-resolver.js';
-import { detectOutputMode } from '../utils/env.js';
-import { compareDocuments, generateDiff } from '../lib/doc-differ.js';
-import { join } from 'node:path';
 
 // Initialize output formatter
 const formatter = new OutputFormatter(detectOutputMode());
@@ -88,7 +96,9 @@ export async function updateCheckCommand(): Promise<void> {
       await performUpdateCheck();
     }
   } catch (error) {
-    console.error('\n' + formatter.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`));
+    console.error(
+      `\n${formatter.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`)}`,
+    );
     process.exit(1);
   }
 }
@@ -122,7 +132,9 @@ async function performFirstTimeDownload(): Promise<void> {
         console.log(formatter.info(`   Downloading: ${progress.current}`));
       } else if (progress.completed > lastProgress) {
         console.log(
-          formatter.info(`   Progress: ${progress.completed}/${progress.total} (${progress.failed} failed)`),
+          formatter.info(
+            `   Progress: ${progress.completed}/${progress.total} (${progress.failed} failed)`,
+          ),
         );
         lastProgress = progress.completed;
       }
@@ -131,14 +143,14 @@ async function performFirstTimeDownload(): Promise<void> {
 
   const summary = getDownloadSummary(results);
 
-  console.log('\n' + formatter.success('✅ Download complete!\n'));
+  console.log(`\n${formatter.success('✅ Download complete!\n')}`);
   console.log(formatter.info('📊 Summary:'));
   console.log(formatter.info(`   Total sections: ${summary.total}`));
   console.log(formatter.info(`   Downloaded: ${summary.successful}`));
   console.log(formatter.info(`   Failed: ${summary.failed}`));
 
   if (summary.failed > 0) {
-    console.log('\n' + formatter.warning('⚠️  Failed downloads:'));
+    console.log(`\n${formatter.warning('⚠️  Failed downloads:')}`);
     for (const file of summary.failedFiles) {
       console.log(formatter.info(`   - ${file}`));
     }
@@ -151,10 +163,12 @@ async function performFirstTimeDownload(): Promise<void> {
   }
 
   // Warm cache for fast access
-  console.log('\n' + formatter.info('🔥 Warming cache for fast access...'));
+  console.log(`\n${formatter.info('🔥 Warming cache for fast access...')}`);
   await warmCacheAfterUpdate(config);
 
-  console.log('\n' + formatter.info('💡 You can now use `claude-docs get <section>` to retrieve documentation'));
+  console.log(
+    `\n${formatter.info('💡 You can now use `claude-docs get <section>` to retrieve documentation')}`,
+  );
   console.log(formatter.info('💡 Use `claude-docs search <query>` to search documentation'));
 }
 
@@ -177,7 +191,7 @@ async function performUpdateCheck(): Promise<void> {
       console.log(formatter.info('   From: Unknown time'));
     }
 
-    console.log('\n' + formatter.info('Overwriting with new update check...\n'));
+    console.log(`\n${formatter.info('Overwriting with new update check...\n')}`);
     await rm(PENDING_DIR, { recursive: true, force: true });
   }
 
@@ -286,7 +300,7 @@ async function performUpdateCheck(): Promise<void> {
   }
 
   // T070 & T071: Display results
-  console.log('\n' + formatter.info('='.repeat(60)));
+  console.log(`\n${formatter.info('='.repeat(60))}`);
   console.log(summaryText);
   console.log(formatter.info('='.repeat(60)));
 
@@ -294,14 +308,14 @@ async function performUpdateCheck(): Promise<void> {
   const totalChanges = newFiles.length + changedFiles.length;
 
   if (totalChanges === 0) {
-    console.log('\n' + formatter.success('✅ All documentation is up to date!'));
+    console.log(`\n${formatter.success('✅ All documentation is up to date!')}`);
     await rm(PENDING_DIR, { recursive: true, force: true });
     await recordUpdateTimestamp();
     return;
   }
 
   // Show diffs for changed files
-  console.log('\n' + formatter.info('=== CHANGES DETECTED ===\n'));
+  console.log(`\n${formatter.info('=== CHANGES DETECTED ===\n')}`);
 
   if (changedFiles.length > 0) {
     for (const filename of changedFiles.slice(0, 3)) {
@@ -336,7 +350,11 @@ async function performUpdateCheck(): Promise<void> {
   console.log(formatter.info('Review the changes above and decide:\n'));
   console.log(formatter.success('TO APPLY these changes:'));
   console.log(formatter.info('  claude-docs update commit "<descriptive changelog message>"\n'));
-  console.log(formatter.info('  Example: claude-docs update commit "Updated MCP server list with new integrations"\n'));
+  console.log(
+    formatter.info(
+      '  Example: claude-docs update commit "Updated MCP server list with new integrations"\n',
+    ),
+  );
   console.log(formatter.info('The changelog message should:'));
   console.log(formatter.info('  - Describe what changed and why (10-1000 characters)'));
   console.log(formatter.info('  - Be specific and descriptive\n'));
@@ -403,12 +421,18 @@ export async function updateCommitCommand(message: string): Promise<void> {
     }
 
     // T083: Validate changelog message
-    const { validateChangelogMessage, addChangelogEntry } = await import('../lib/changelog-manager.js');
+    const { validateChangelogMessage, addChangelogEntry } = await import(
+      '../lib/changelog-manager.js'
+    );
 
     try {
       validateChangelogMessage(message);
     } catch (error) {
-      console.error(formatter.error(`❌ Invalid changelog message: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(
+        formatter.error(
+          `❌ Invalid changelog message: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
       console.log(formatter.info('\n💡 The message should be descriptive (10-1000 chars)'));
       process.exit(1);
     }
@@ -417,7 +441,7 @@ export async function updateCommitCommand(message: string): Promise<void> {
     const summaryPath = join(PENDING_DIR, 'summary.txt');
     if (await fileExists(summaryPath)) {
       const summary = await safeReadFile(summaryPath);
-      console.log('\n' + formatter.info('=== APPLYING CHANGES ===\n'));
+      console.log(`\n${formatter.info('=== APPLYING CHANGES ===\n')}`);
       console.log(summary);
       console.log('');
     }
@@ -459,7 +483,7 @@ export async function updateCommitCommand(message: string): Promise<void> {
     }
 
     // T085: Generate and append changelog entry
-    console.log('\n' + formatter.info('📋 Updating changelog...'));
+    console.log(`\n${formatter.info('📋 Updating changelog...')}`);
     try {
       await addChangelogEntry(message, updatedFiles);
       console.log(formatter.success(`   ✓ Changelog updated: ${CHANGELOG_FILE}`));
@@ -468,7 +492,7 @@ export async function updateCommitCommand(message: string): Promise<void> {
     }
 
     // T086: Clear cache directory
-    console.log('\n' + formatter.info('🗑️  Clearing cache (files changed)...'));
+    console.log(`\n${formatter.info('🗑️  Clearing cache (files changed)...')}`);
     const { clearCache } = await import('../lib/cache-manager.js');
     try {
       await clearCache();
@@ -486,17 +510,19 @@ export async function updateCommitCommand(message: string): Promise<void> {
     await recordUpdateTimestamp();
 
     // T089: Display success message
-    console.log('\n' + formatter.success(`✅ Update applied: ${appliedCount} section(s)`));
+    console.log(`\n${formatter.success(`✅ Update applied: ${appliedCount} section(s)`)}`);
     console.log(formatter.info(`📋 Changelog: ${CHANGELOG_FILE}`));
 
     // T090: Trigger cache warm
-    console.log('\n' + formatter.info('🔥 Warming cache...'));
+    console.log(`\n${formatter.info('🔥 Warming cache...')}`);
     const config = await loadResourceConfig();
     await warmCacheAfterUpdate(config);
 
-    console.log('\n' + formatter.success('✅ All done!'));
+    console.log(`\n${formatter.success('✅ All done!')}`);
   } catch (error) {
-    console.error('\n' + formatter.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`));
+    console.error(
+      `\n${formatter.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`)}`,
+    );
     process.exit(1);
   }
 }
@@ -517,7 +543,7 @@ export async function updateDiscardCommand(): Promise<void> {
     const summaryPath = join(PENDING_DIR, 'summary.txt');
 
     if (await fileExists(summaryPath)) {
-      console.log('\n' + formatter.info('=== PENDING CHANGES (TO BE DISCARDED) ===\n'));
+      console.log(`\n${formatter.info('=== PENDING CHANGES (TO BE DISCARDED) ===\n')}`);
       const summary = await safeReadFile(summaryPath);
       console.log(summary);
       console.log('');
@@ -538,7 +564,9 @@ export async function updateDiscardCommand(): Promise<void> {
     console.log(formatter.success('✅ Pending update discarded'));
     console.log(formatter.info('\n💡 Your local documentation remains unchanged'));
   } catch (error) {
-    console.error('\n' + formatter.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`));
+    console.error(
+      `\n${formatter.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`)}`,
+    );
     process.exit(1);
   }
 }
@@ -583,8 +611,10 @@ export async function updateStatusCommand(): Promise<void> {
 
       // T107: 24-hour reminder check
       if (hoursAgo > 24) {
-        console.log('\n' + formatter.warning(`⚠️  Documentation not updated in ${daysAgo} days`));
-        console.log(formatter.info('💡 Consider running `claude-docs update` to check for updates'));
+        console.log(`\n${formatter.warning(`⚠️  Documentation not updated in ${daysAgo} days`)}`);
+        console.log(
+          formatter.info('💡 Consider running `claude-docs update` to check for updates'),
+        );
       }
     } else {
       console.log(formatter.info('📅 Last Update: Never'));
@@ -594,7 +624,7 @@ export async function updateStatusCommand(): Promise<void> {
     if (await fileExists(PENDING_DIR)) {
       const summaryPath = join(PENDING_DIR, 'summary.txt');
 
-      console.log('\n' + formatter.warning('⚠️  PENDING UPDATE AVAILABLE\n'));
+      console.log(`\n${formatter.warning('⚠️  PENDING UPDATE AVAILABLE\n')}`);
 
       if (await fileExists(summaryPath)) {
         const summary = await safeReadFile(summaryPath);
@@ -608,10 +638,10 @@ export async function updateStatusCommand(): Promise<void> {
         }
       }
 
-      console.log('\n' + formatter.info('💡 Apply with: claude-docs update commit "<message>"'));
+      console.log(`\n${formatter.info('💡 Apply with: claude-docs update commit "<message>"')}`);
       console.log(formatter.info('💡 Discard with: claude-docs update discard'));
     } else {
-      console.log('\n' + formatter.info('📦 No pending updates'));
+      console.log(`\n${formatter.info('📦 No pending updates')}`);
     }
 
     // Show missing docs if any
@@ -620,20 +650,22 @@ export async function updateStatusCommand(): Promise<void> {
       const missingFiles = missing.split('\n').filter((f) => f.trim());
 
       if (missingFiles.length > 0) {
-        console.log('\n' + formatter.warning(`⚠️  ${missingFiles.length} sections failed to download:`));
+        console.log(
+          `\n${formatter.warning(`⚠️  ${missingFiles.length} sections failed to download:`)}`,
+        );
         for (const file of missingFiles.slice(0, 5)) {
           console.log(formatter.info(`   - ${file}`));
         }
         if (missingFiles.length > 5) {
           console.log(formatter.info(`   ... and ${missingFiles.length - 5} more`));
         }
-        console.log('\n' + formatter.info('💡 Run `claude-docs update` to retry downloads'));
+        console.log(`\n${formatter.info('💡 Run `claude-docs update` to retry downloads')}`);
       }
     }
 
     // T109: Show recent changelog entries
     if (await fileExists(CHANGELOG_FILE)) {
-      console.log('\n' + formatter.info('📋 Recent Changes:\n'));
+      console.log(`\n${formatter.info('📋 Recent Changes:\n')}`);
 
       try {
         const changelog = await safeReadFile(CHANGELOG_FILE);
@@ -641,7 +673,7 @@ export async function updateStatusCommand(): Promise<void> {
 
         if (entries.length > 0) {
           console.log(entries);
-          console.log('\n' + formatter.info(`💡 Full changelog: ${CHANGELOG_FILE}`));
+          console.log(`\n${formatter.info(`💡 Full changelog: ${CHANGELOG_FILE}`)}`);
         } else {
           console.log(formatter.info('   No changelog entries yet'));
         }
@@ -650,7 +682,9 @@ export async function updateStatusCommand(): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('\n' + formatter.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`));
+    console.error(
+      `\n${formatter.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`)}`,
+    );
     process.exit(1);
   }
 }

@@ -2,15 +2,15 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as fileOps from '../../../src/lib/file-ops.js';
 import {
+  REMOTE_RESOURCE_URL,
+  getTotalSections,
   loadResourceConfig,
   validateResourceConfig,
-  getTotalSections,
-  REMOTE_RESOURCE_URL,
 } from '../../../src/lib/resource-loader.js';
 import type { ResourceConfiguration } from '../../../src/types/documentation.js';
 import * as httpClient from '../../../src/utils/http-client.js';
-import * as fileOps from '../../../src/lib/file-ops.js';
 
 describe('Resource Loader', () => {
   let tempDir: string;
@@ -468,7 +468,7 @@ describe('Resource Loader', () => {
       });
 
       it('should ignore expired cache and use fallback', async () => {
-        const oneHourAgo = Date.now() - (61 * 60 * 1000); // 61 minutes ago
+        const oneHourAgo = Date.now() - 61 * 60 * 1000; // 61 minutes ago
 
         // Create expired cache file
         await fileOps.safeWriteFile(
@@ -573,10 +573,7 @@ describe('Resource Loader', () => {
         expect(totalSections).toBe(3);
 
         // Manually count sections to verify the logic
-        const manualCount = testConfig.categories.reduce(
-          (sum, cat) => sum + cat.docs.length,
-          0,
-        );
+        const manualCount = testConfig.categories.reduce((sum, cat) => sum + cat.docs.length, 0);
 
         expect(totalSections).toBe(manualCount);
         expect(manualCount).toBe(3);

@@ -10,7 +10,7 @@ describe('CLI Modes Integration', () => {
 
   afterEach(() => {
     if (originalEnv === undefined) {
-      delete process.env.CLAUDECODE;
+      process.env.CLAUDECODE = undefined;
     } else {
       process.env.CLAUDECODE = originalEnv;
     }
@@ -82,6 +82,7 @@ describe('CLI Modes Integration', () => {
         });
 
         // User mode uses ANSI codes
+        // biome-ignore lint/suspicious/noControlCharactersInRegex: Testing ANSI escape codes
         expect(output).toMatch(/\x1b\[\d+m/); // Should have ANSI escape codes
       } catch (error) {
         console.warn('CLI not yet built or user mode formatting not implemented');

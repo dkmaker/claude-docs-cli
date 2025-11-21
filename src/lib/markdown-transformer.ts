@@ -141,6 +141,7 @@ export function transformSteps(content: string): string {
     const stepRegex = /<Step[^>]*>(.*?)<\/Step>/gis;
     let match: RegExpExecArray | null;
 
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex matching pattern
     while ((match = stepRegex.exec(stepsContent)) !== null) {
       if (match[1]) {
         steps.push(match[1].trim());
@@ -212,25 +213,28 @@ export function transformInternalLinks(content: string): string {
  * @returns Transformed content
  */
 export function transformMcpComponent(content: string): string {
-	let result = content;
+  let result = content;
 
-	// Check if there's a JavaScript servers array to process
-	const hasServersArray = /const servers = \[\{/.test(content);
+  // Check if there's a JavaScript servers array to process
+  const hasServersArray = /const servers = \[\{/.test(content);
 
-	if (hasServersArray) {
-		// TODO: Extract JavaScript array and generate table
-		// For now, just remove the component
-		result = result.replace(/<MCPServersTable[^>]*\/>/g, '\n> **Note:** MCP servers table processing not yet implemented in Node.js version.\n');
-		result = result.replace(/^export const MCPServersTable[\s\S]*?^};$/gm, '');
-	} else {
-		// No JavaScript array - just remove the tag (server-side rendered content)
-		result = result.replace(/<MCPServersTable[^>]*\/>/g, '');
-	}
+  if (hasServersArray) {
+    // TODO: Extract JavaScript array and generate table
+    // For now, just remove the component
+    result = result.replace(
+      /<MCPServersTable[^>]*\/>/g,
+      '\n> **Note:** MCP servers table processing not yet implemented in Node.js version.\n',
+    );
+    result = result.replace(/^export const MCPServersTable[\s\S]*?^};$/gm, '');
+  } else {
+    // No JavaScript array - just remove the tag (server-side rendered content)
+    result = result.replace(/<MCPServersTable[^>]*\/>/g, '');
+  }
 
-	// Remove export const MCPServersTable (if present)
-	result = result.replace(/^export const MCPServersTable[\s\S]*?^};$/gm, '');
+  // Remove export const MCPServersTable (if present)
+  result = result.replace(/^export const MCPServersTable[\s\S]*?^};$/gm, '');
 
-	return result;
+  return result;
 }
 
 /**
@@ -252,7 +256,7 @@ export function cleanWhitespace(content: string): string {
   result = result.replace(/\n{3,}/g, '\n\n');
 
   // Ensure file ends with single newline
-  result = result.trim() + '\n';
+  result = `${result.trim()}\n`;
 
   return result;
 }

@@ -52,7 +52,9 @@ export function validateChangelogMessage(message: string): void {
 
   for (const word of vague) {
     if (lowerMessage === word) {
-      throw new Error(`Changelog too vague: "${trimmed}". Please be more specific about what changed.`);
+      throw new Error(
+        `Changelog too vague: "${trimmed}". Please be more specific about what changed.`,
+      );
     }
   }
 }
@@ -147,10 +149,10 @@ This file tracks all changes to the Claude Code documentation over time.
     const afterSeparator = existingContent.substring(separatorIndex + 4);
 
     // Prepend new entry
-    newContent = beforeSeparator + '\n' + newEntry + afterSeparator;
+    newContent = `${beforeSeparator}\n${newEntry}${afterSeparator}`;
   } else {
     // No separator found, just prepend
-    newContent = existingContent + '\n' + newEntry;
+    newContent = `${existingContent}\n${newEntry}`;
   }
 
   // Write updated changelog

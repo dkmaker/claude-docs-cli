@@ -2,13 +2,13 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import * as fileOps from '../../../src/lib/file-ops.js';
 import {
-  searchDocuments,
-  formatSearchResults,
   type SearchOptions,
+  formatSearchResults,
+  searchDocuments,
 } from '../../../src/lib/search-engine.js';
 import { getDocPath } from '../../../src/utils/path-resolver.js';
-import * as fileOps from '../../../src/lib/file-ops.js';
 
 describe('Search Engine', () => {
   let tempDir: string;
@@ -129,16 +129,12 @@ MixedCase: Plugin`,
 
       // Search for lowercase - should find only lowercase match
       const resultsLower = await searchDocuments('plugin', options);
-      const lowerMatches = resultsLower.filter((r) =>
-        r.matchedLine.includes('lowercase:'),
-      );
+      const lowerMatches = resultsLower.filter((r) => r.matchedLine.includes('lowercase:'));
       expect(lowerMatches.length).toBeGreaterThan(0);
 
       // Search for uppercase - should find only uppercase match
       const resultsUpper = await searchDocuments('PLUGIN', options);
-      const upperMatches = resultsUpper.filter((r) =>
-        r.matchedLine.includes('UPPERCASE:'),
-      );
+      const upperMatches = resultsUpper.filter((r) => r.matchedLine.includes('UPPERCASE:'));
       expect(upperMatches.length).toBeGreaterThan(0);
 
       // The results should be different
@@ -326,7 +322,10 @@ MixedCase: Plugin`,
 
     it('should skip non-markdown files', async () => {
       // Create a non-markdown file (unique filename)
-      await fileOps.safeWriteFile(getDocPath('non-markdown-skip-test.txt'), 'Plugin info in txt file');
+      await fileOps.safeWriteFile(
+        getDocPath('non-markdown-skip-test.txt'),
+        'Plugin info in txt file',
+      );
 
       const results = await searchDocuments('plugin');
 

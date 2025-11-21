@@ -1,6 +1,6 @@
 import { clearCache, getCacheStats, warmCache } from '../lib/cache-manager.js';
-import { loadResourceConfig } from '../lib/resource-loader.js';
 import { OutputFormatter } from '../lib/output-formatter.js';
+import { loadResourceConfig } from '../lib/resource-loader.js';
 import { detectOutputMode } from '../utils/env.js';
 
 const formatter = new OutputFormatter(detectOutputMode());
@@ -22,7 +22,9 @@ export async function cacheClearCommand(): Promise<void> {
     console.log(formatter.success('Cache cleared successfully'));
     console.log(formatter.info('Cache will be rebuilt on next document access'));
   } catch (error) {
-    console.error(`\n${formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`)}`);
+    console.error(
+      `\n${formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`)}`,
+    );
     process.exit(1);
   }
 }
@@ -40,10 +42,14 @@ export async function cacheInfoCommand(): Promise<void> {
     console.log(formatter.info(`Total cache size: ${formatBytes(stats.totalSize)}`));
 
     if (stats.totalFiles === 0) {
-      console.log(`\n${formatter.info('No cached files. Run `claude-docs cache warm` to pre-generate cache.')}`);
+      console.log(
+        `\n${formatter.info('No cached files. Run `claude-docs cache warm` to pre-generate cache.')}`,
+      );
     }
   } catch (error) {
-    console.error(`\n${formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`)}`);
+    console.error(
+      `\n${formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`)}`,
+    );
     process.exit(1);
   }
 }
@@ -90,10 +96,16 @@ export async function cacheWarmCommand(): Promise<void> {
     console.log(formatter.info(`   Processed: ${processed}/${filenames.length} files`));
 
     if (processed < filenames.length) {
-      console.log(formatter.info(`   ${filenames.length - processed} files failed (source files may be missing)`));
+      console.log(
+        formatter.info(
+          `   ${filenames.length - processed} files failed (source files may be missing)`,
+        ),
+      );
     }
   } catch (error) {
-    console.error(`\n${formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`)}`);
+    console.error(
+      `\n${formatter.error(`Error: ${error instanceof Error ? error.message : String(error)}`)}`,
+    );
     process.exit(1);
   }
 }
