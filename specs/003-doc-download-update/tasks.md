@@ -3,9 +3,22 @@
 **Input**: Design documents from `/specs/003-doc-download-update/`
 **Prerequisites**: plan.md, spec.md, research.md
 
+**STATUS (2025-11-21)**: Core MVP implementation complete (58/153 tasks, 38%)
+- ✅ Phases 1-5, 10-11: Implementation done, tests pending
+- ❌ Phases 6-9: Update workflows not implemented (stubbed only)
+- ❌ Phase 12: Polish tasks not started
+- ⚠️ TDD workflow: Implementation done first, tests need to be written retrospectively
+
 **Tests**: Following TDD workflow per constitution - tests written FIRST, must FAIL before implementation
+**NOTE**: Current implementation violated TDD - implementation was completed before tests.
+Tests marked `[ ]` below need to be written AFTER the fact to validate existing code.
 
 **Organization**: Tasks grouped by user story to enable independent implementation and testing of each story.
+
+**NEXT SESSION RECOMMENDATIONS**:
+1. Write tests for completed implementation (Phases 3-5, 10-11) to achieve TDD compliance
+2. Implement remaining workflows (Phases 6-9) following proper TDD this time
+3. Complete polish tasks (Phase 12)
 
 ## Format: `[ID] [P?] [Story] Description`
 
