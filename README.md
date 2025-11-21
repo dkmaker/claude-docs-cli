@@ -10,14 +10,14 @@ Install the latest version directly from GitHub Releases:
 
 ```bash
 # Install latest version globally
-npm install -g $(curl -s https://raw.githubusercontent.com/dkmaker/claude-docs-cli/main/LATEST_RELEASE.txt)
+npm install -g $(curl -s https://api.github.com/repos/dkmaker/claude-docs-cli/releases/latest | grep "browser_download_url.*tgz" | cut -d '"' -f 4)
 ```
 
 Or install a specific version:
 
 ```bash
-# Install specific version globally (e.g., v1.2.3)
-npm install -g https://github.com/dkmaker/claude-docs-cli/releases/download/v1.2.3/claude-docs-1.2.3.tgz
+# Install specific version globally (e.g., v1.2.2)
+npm install -g https://github.com/dkmaker/claude-docs-cli/releases/download/v1.2.2/claude-docs-1.2.2.tgz
 ```
 
 Verify installation:

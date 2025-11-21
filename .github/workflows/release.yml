@@ -83,17 +83,6 @@ jobs:
               --title "v${VERSION}" \
               --generate-notes \
               "${TARBALL}"
-
-            # Update LATEST_RELEASE.txt
-            TARBALL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/${TARBALL}"
-            echo "$TARBALL_URL" > LATEST_RELEASE.txt
-
-            # Commit reference file
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add LATEST_RELEASE.txt
-            git commit -m "chore: update latest release URL [skip ci]"
-            git push
           else
             echo "No version bump detected, skipping release"
           fi
