@@ -54,11 +54,10 @@ jobs:
           pnpm run build
           pnpm test:run
 
-      - name: Create Release Pull Request or Publish
+      - name: Create Release Pull Request or Version Bump
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm run release
           version: pnpm run version
           commit: "chore: version packages"
           title: "chore: version packages"
@@ -66,32 +65,35 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create tarball and upload to GitHub Release
-        if: steps.changesets.outputs.published == 'true'
+        if: steps.changesets.outputs.hasChangesets == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get published packages info
-          PACKAGES_JSON='${{ steps.changesets.outputs.publishedPackages }}'
-          VERSION=$(echo "$PACKAGES_JSON" | jq -r '.[0].version')
-          PACKAGE_NAME=$(echo "$PACKAGES_JSON" | jq -r '.[0].name')
+          # Check if we just did a version bump by looking for version changes
+          if git diff HEAD~1 --name-only | grep -q "package.json"; then
+            # Get current version from package.json
+            VERSION=$(node -p "require('./package.json').version")
 
-          # Create tarball
-          npm pack
-          TARBALL=$(ls *.tgz)
+            # Create tarball
+            npm pack
+            TARBALL=$(ls *.tgz)
 
-          # Create GitHub Release with gh CLI (official GitHub tool)
-          gh release create "v${VERSION}" \
-            --title "v${VERSION}" \
-            --generate-notes \
-            "${TARBALL}"
+            # Create GitHub Release with gh CLI (official GitHub tool)
+            gh release create "v${VERSION}" \
+              --title "v${VERSION}" \
+              --generate-notes \
+              "${TARBALL}"
 
-          # Update LATEST_RELEASE.txt
-          TARBALL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/${TARBALL}"
-          echo "$TARBALL_URL" > LATEST_RELEASE.txt
+            # Update LATEST_RELEASE.txt
+            TARBALL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/${TARBALL}"
+            echo "$TARBALL_URL" > LATEST_RELEASE.txt
 
-          # Commit reference file
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add LATEST_RELEASE.txt
-          git commit -m "chore: update latest release URL [skip ci]"
-          git push
+            # Commit reference file
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add LATEST_RELEASE.txt
+            git commit -m "chore: update latest release URL [skip ci]"
+            git push
+          else
+            echo "No version bump detected, skipping release"
+          fi
