@@ -101,28 +101,30 @@ async function showUserHelp(): Promise<void> {
   output += boxDrawing.createTable(headers, rows, 'light');
   output += '\n';
 
-  output += formatter.dim('Options:') + '\n';
-  output += formatter.dim('  -v, --version    Display version') + '\n';
-  output += formatter.dim('  -h, --help       Display help') + '\n';
-  output += formatter.dim('  --output <fmt>   Output format (json, markdown)') + '\n\n';
+  output += `${formatter.dim('Options:')}\n`;
+  output += `${formatter.dim('  -v, --version    Display version')}\n`;
+  output += `${formatter.dim('  -h, --help       Display help')}\n`;
+  output += `${formatter.dim('  --output <fmt>   Output format (json, markdown)')}\n\n`;
 
   // Quick start box
   const tips = [
     '',
     formatter.bold('  Quick Start:'),
     '',
-    formatter.success('  ▸') + ' List all docs:      ' + formatter.cyan('claude-docs list'),
-    formatter.success('  ▸') + ' Get a section:      ' + formatter.cyan('claude-docs get quickstart'),
-    formatter.success('  ▸') + ' Search:             ' + formatter.cyan('claude-docs search "MCP servers"'),
-    formatter.success('  ▸') + ' Check for updates:  ' + formatter.cyan('claude-docs update'),
+    `${formatter.success('  ▸')} List all docs:      ${formatter.cyan('claude-docs list')}`,
+    `${formatter.success('  ▸')} Get a section:      ${formatter.cyan('claude-docs get quickstart')}`,
+    `${formatter.success('  ▸')} Search:             ${formatter.cyan('claude-docs search "MCP servers"')}`,
+    `${formatter.success('  ▸')} Check for updates:  ${formatter.cyan('claude-docs update')}`,
     '',
   ];
 
   output += boxDrawing.createInfoBox(tips, 60);
   output += '\n';
 
-  output += formatter.warning('💡 Tip:') + formatter.dim(' Run any command with --help for detailed usage') + '\n\n';
-  output += formatter.dim(`Version: ${CLI_VERSION}`) + '\n';
+  output += `${
+    formatter.warning('💡 Tip:') + formatter.dim(' Run any command with --help for detailed usage')
+  }\n\n`;
+  output += `${formatter.dim(`Version: ${CLI_VERSION}`)}\n`;
 
   console.log(output);
 }

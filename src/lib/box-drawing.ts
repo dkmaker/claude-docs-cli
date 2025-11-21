@@ -78,9 +78,9 @@ export function createHeaderBox(text: string, width = 62): string {
   const paddedText = ' '.repeat(leftPad) + text + ' '.repeat(rightPad);
 
   let output = '';
-  output += chars.topLeft + chars.horizontal.repeat(width) + chars.topRight + '\n';
-  output += chars.vertical + '  ' + paddedText + '  ' + chars.vertical + '\n';
-  output += chars.bottomLeft + chars.horizontal.repeat(width) + chars.bottomRight + '\n';
+  output += `${chars.topLeft + chars.horizontal.repeat(width) + chars.topRight}\n`;
+  output += `${chars.vertical}  ${paddedText}  ${chars.vertical}\n`;
+  output += `${chars.bottomLeft + chars.horizontal.repeat(width) + chars.bottomRight}\n`;
 
   return output;
 }
@@ -113,13 +113,13 @@ export function createTable(
     output += chars.horizontal.repeat((widths[i] ?? 0) + 2);
     if (i < headers.length - 1) output += chars.topT;
   }
-  output += chars.topRight + '\n';
+  output += `${chars.topRight}\n`;
 
   // Header row
   output += chars.vertical;
   for (let i = 0; i < headers.length; i++) {
     const paddedHeader = padWithAnsi(headers[i] ?? '', widths[i] ?? 0);
-    output += ' ' + paddedHeader + ' ' + chars.vertical;
+    output += ` ${paddedHeader} ${chars.vertical}`;
   }
   output += '\n';
 
@@ -129,14 +129,14 @@ export function createTable(
     output += chars.horizontal.repeat((widths[i] ?? 0) + 2);
     if (i < headers.length - 1) output += chars.cross;
   }
-  output += chars.rightT + '\n';
+  output += `${chars.rightT}\n`;
 
   // Data rows
   for (const row of rows) {
     output += chars.vertical;
     for (let i = 0; i < headers.length; i++) {
       const paddedCell = padWithAnsi(row[i] ?? '', widths[i] ?? 0);
-      output += ' ' + paddedCell + ' ' + chars.vertical;
+      output += ` ${paddedCell} ${chars.vertical}`;
     }
     output += '\n';
   }
@@ -147,7 +147,7 @@ export function createTable(
     output += chars.horizontal.repeat((widths[i] ?? 0) + 2);
     if (i < headers.length - 1) output += chars.bottomT;
   }
-  output += chars.bottomRight + '\n';
+  output += `${chars.bottomRight}\n`;
 
   return output;
 }
@@ -166,17 +166,17 @@ export function createInfoBox(lines: string[], minWidth = 60): string {
   let output = '';
 
   // Top border
-  output += chars.topLeft + chars.horizontal.repeat(width) + chars.topRight + '\n';
+  output += `${chars.topLeft + chars.horizontal.repeat(width) + chars.topRight}\n`;
 
   // Content lines
   for (const line of lines) {
     const textLength = stripAnsi(line).length;
     const padding = Math.max(0, width - textLength - 2);
-    output += chars.vertical + ' ' + line + ' '.repeat(padding) + ' ' + chars.vertical + '\n';
+    output += `${chars.vertical} ${line}${' '.repeat(padding)} ${chars.vertical}\n`;
   }
 
   // Bottom border
-  output += chars.bottomLeft + chars.horizontal.repeat(width) + chars.bottomRight + '\n';
+  output += `${chars.bottomLeft + chars.horizontal.repeat(width) + chars.bottomRight}\n`;
 
   return output;
 }
@@ -197,7 +197,7 @@ export function createDivider(text: string, width = 60): string {
  * Note: Emojis and wide characters count as 2 for display width
  */
 function stripAnsi(text: string): string {
-  // eslint-disable-next-line no-control-regex
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape codes are control characters by design
   return text.replace(/\x1b\[[0-9;]*m/g, '');
 }
 
@@ -214,11 +214,11 @@ function getVisualWidth(text: string): number {
     // Emoji and wide characters (rough heuristic)
     // Most emojis are in ranges: 0x1F300-0x1F9FF, 0x2600-0x26FF, etc.
     if (
-      code >= 0x1f300 && code <= 0x1f9ff || // Emoji
-      code >= 0x2600 && code <= 0x26ff ||   // Misc symbols
-      code >= 0x2700 && code <= 0x27bf ||   // Dingbats
-      code >= 0xfe00 && code <= 0xfe0f ||   // Variation selectors
-      code >= 0x1f000 && code <= 0x1f02f    // Mahjong, etc.
+      (code >= 0x1f300 && code <= 0x1f9ff) || // Emoji
+      (code >= 0x2600 && code <= 0x26ff) || // Misc symbols
+      (code >= 0x2700 && code <= 0x27bf) || // Dingbats
+      (code >= 0xfe00 && code <= 0xfe0f) || // Variation selectors
+      (code >= 0x1f000 && code <= 0x1f02f) // Mahjong, etc.
     ) {
       width += 2; // Wide character
     } else {
@@ -232,7 +232,11 @@ function getVisualWidth(text: string): number {
 /**
  * Pad string accounting for ANSI codes
  */
-function padWithAnsi(text: string, width: number, align: 'left' | 'right' | 'center' = 'left'): string {
+function padWithAnsi(
+  text: string,
+  width: number,
+  align: 'left' | 'right' | 'center' = 'left',
+): string {
   const visibleLength = stripAnsi(text).length;
   const padding = Math.max(0, width - visibleLength);
 

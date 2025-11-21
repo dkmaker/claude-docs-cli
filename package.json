@@ -29,12 +29,7 @@
     "version": "changeset version",
     "release": "pnpm run build && changeset publish"
   },
-  "keywords": [
-    "cli",
-    "documentation",
-    "claude",
-    "markdown"
-  ],
+  "keywords": ["cli", "documentation", "claude", "markdown"],
   "author": "",
   "license": "MIT",
   "engines": {

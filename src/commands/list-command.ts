@@ -27,7 +27,10 @@ function getListCacheKey(docSlug?: string): string {
 export async function listCommand(docSlug?: string): Promise<void> {
   const mode = detectOutputMode();
   const formatter = new OutputFormatter(mode === 'ai' || mode === 'json' ? 'ai' : 'user');
-  const renderer = createRenderer(mode === 'json' ? 'json' : mode === 'ai' ? 'ai' : 'user', formatter);
+  const renderer = createRenderer(
+    mode === 'json' ? 'json' : mode === 'ai' ? 'ai' : 'user',
+    formatter,
+  );
 
   try {
     // T108: Show 24-hour update reminder

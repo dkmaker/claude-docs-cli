@@ -51,5 +51,5 @@ export function getWelcomeBanner(): string {
   const coloredLogo = colorizeASCII(CLAUDE_DOCS_LOGO);
   const coloredSubtitle = DIM + SUBTITLE + RESET;
 
-  return coloredLogo + '\n' + coloredSubtitle + '\n';
+  return `${coloredLogo}\n${coloredSubtitle}\n`;
 }
