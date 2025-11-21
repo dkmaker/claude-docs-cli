@@ -156,13 +156,14 @@ MixedCase: Plugin`,
 
       expect(results.length).toBeGreaterThan(0);
       const result = results[0];
+      expect(result).toBeDefined();
 
       // Should have context array
-      expect(Array.isArray(result.context)).toBe(true);
-      expect(result.context.length).toBeGreaterThan(0);
+      expect(Array.isArray(result?.context)).toBe(true);
+      expect(result?.context.length).toBeGreaterThan(0);
 
       // Context should include the matched line
-      expect(result.context.some((line) => line.includes('Plugins allow'))).toBe(true);
+      expect(result?.context.some((line) => line.includes('Plugins allow'))).toBe(true);
     });
 
     it('should extract 5 lines before and after by default', async () => {
@@ -171,11 +172,12 @@ MixedCase: Plugin`,
 
       expect(results.length).toBeGreaterThan(0);
       const result = results[0];
+      expect(result).toBeDefined();
 
       // Context should include up to 11 lines (5 before + match + 5 after)
       // But may be less if near start/end of file
-      expect(result.context.length).toBeLessThanOrEqual(11);
-      expect(result.context.length).toBeGreaterThan(0);
+      expect(result?.context.length).toBeLessThanOrEqual(11);
+      expect(result?.context.length).toBeGreaterThan(0);
     });
 
     it('should support custom context line count', async () => {
@@ -187,9 +189,10 @@ MixedCase: Plugin`,
 
       expect(results.length).toBeGreaterThan(0);
       const result = results[0];
+      expect(result).toBeDefined();
 
       // With contextLines=2, should have at most 5 lines (2 before + match + 2 after)
-      expect(result.context.length).toBeLessThanOrEqual(5);
+      expect(result?.context.length).toBeLessThanOrEqual(5);
     });
 
     it('should handle matches at start of file', async () => {
@@ -197,12 +200,13 @@ MixedCase: Plugin`,
 
       expect(results.length).toBeGreaterThan(0);
       const result = results[0];
+      expect(result).toBeDefined();
 
       // Should have context even at start of file
-      expect(result.context.length).toBeGreaterThan(0);
+      expect(result?.context.length).toBeGreaterThan(0);
 
       // First line of context should be the match
-      expect(result.context[0]).toContain('# Document 1');
+      expect(result?.context[0]).toContain('# Document 1');
     });
 
     it('should handle matches at end of file', async () => {
@@ -210,9 +214,10 @@ MixedCase: Plugin`,
 
       expect(results.length).toBeGreaterThan(0);
       const result = results[0];
+      expect(result).toBeDefined();
 
       // Should have context
-      expect(result.context.length).toBeGreaterThan(0);
+      expect(result?.context.length).toBeGreaterThan(0);
     });
 
     it('should include correct line number', async () => {
@@ -220,9 +225,10 @@ MixedCase: Plugin`,
 
       expect(results.length).toBeGreaterThan(0);
       const result = results[0];
+      expect(result).toBeDefined();
 
       // First line should be line 1
-      expect(result.lineNumber).toBe(1);
+      expect(result?.lineNumber).toBe(1);
     });
   });
 
@@ -352,8 +358,9 @@ MixedCase: Plugin`,
 
       expect(results.length).toBeGreaterThan(0);
       const result = results[0];
+      expect(result).toBeDefined();
 
-      expect(result.section).toBe(result.filename.replace('.md', ''));
+      expect(result?.section).toBe(result?.filename.replace('.md', ''));
     });
 
     it('should include matched line trimmed', async () => {
@@ -361,10 +368,11 @@ MixedCase: Plugin`,
 
       expect(results.length).toBeGreaterThan(0);
       const result = results[0];
+      expect(result).toBeDefined();
 
-      expect(result.matchedLine).toBeTruthy();
+      expect(result?.matchedLine).toBeTruthy();
       // Should be trimmed (no leading/trailing whitespace)
-      expect(result.matchedLine).toBe(result.matchedLine.trim());
+      expect(result?.matchedLine).toBe(result?.matchedLine.trim());
     });
   });
 

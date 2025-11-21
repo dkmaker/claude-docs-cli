@@ -297,9 +297,10 @@ describe('Document Downloader', () => {
 
       // Final progress should show all completed
       const finalProgress = progressUpdates[progressUpdates.length - 1];
-      expect(finalProgress.completed).toBe(2);
-      expect(finalProgress.failed).toBe(0);
-      expect(finalProgress.current).toBeNull();
+      expect(finalProgress).toBeDefined();
+      expect(finalProgress?.completed).toBe(2);
+      expect(finalProgress?.failed).toBe(0);
+      expect(finalProgress?.current).toBeNull();
 
       expect(downloadSpy).toHaveBeenCalled();
       expect(writeSpy).toHaveBeenCalled();
@@ -407,8 +408,10 @@ describe('Document Downloader', () => {
 
       // Should have attempted to download all files
       expect(results).toHaveLength(2);
-      expect(results[0].success).toBe(false);
-      expect(results[1].success).toBe(true);
+      expect(results[0]).toBeDefined();
+      expect(results[1]).toBeDefined();
+      expect(results[0]?.success).toBe(false);
+      expect(results[1]?.success).toBe(true);
       expect(downloadSpy).toHaveBeenCalled();
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -429,8 +432,9 @@ describe('Document Downloader', () => {
       await downloadAllDocuments(mockConfig, { onProgress });
 
       const finalProgress = progressUpdates[progressUpdates.length - 1];
-      expect(finalProgress.failed).toBe(2);
-      expect(finalProgress.completed).toBe(0);
+      expect(finalProgress).toBeDefined();
+      expect(finalProgress?.failed).toBe(2);
+      expect(finalProgress?.completed).toBe(0);
 
       expect(downloadSpy).toHaveBeenCalled();
     });
