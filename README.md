@@ -169,6 +169,9 @@ dist/                # Compiled output (gitignored)
   - `cache clear` - Clear all cached files
   - `cache warm` - Pre-generate cache for all documentation
 
+**Advanced Commands (User Mode):**
+- `doctor` - Run health checks and verify installation
+
 **Global Options:**
 - `--version, -v` - Display version information
 - `--help, -h` - Display help information

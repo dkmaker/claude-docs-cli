@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import { cacheClearCommand, cacheInfoCommand, cacheWarmCommand } from './commands/cache-command.js';
+import { doctorCommand } from './commands/doctor-command.js';
 import { getCommand } from './commands/get-command.js';
 import { listCommand } from './commands/list-command.js';
 import { searchCommand } from './commands/search-command.js';
@@ -122,17 +123,10 @@ export function main() {
   // Advanced commands (only in user mode)
   if (mode === 'user') {
     program
-      .command('status')
-      .description('Show cache and documentation status')
+      .command('doctor')
+      .description('Run health checks and verify installation')
       .action(() => {
-        console.log(formatter.warning('Status command not yet implemented'));
-      });
-
-    program
-      .command('reset-cache')
-      .description('Clear documentation cache')
-      .action(() => {
-        console.log(formatter.warning('Reset cache command not yet implemented'));
+        doctorCommand();
       });
   }
 
