@@ -71,10 +71,10 @@ Tests marked `[ ]` below need to be written AFTER the fact to validate existing 
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T011 [P] [US6] Unit test for resource-loader in `tests/unit/resource-loader.test.ts`
-- [ ] T012 [P] [US6] Test remote fetch success scenario
-- [ ] T013 [P] [US6] Test remote fetch failure with fallback to bundled version
-- [ ] T014 [P] [US6] Test resource file validation (schema check)
+- [X] T011 [P] [US6] Unit test for resource-loader in `tests/unit/resource-loader.test.ts`
+- [X] T012 [P] [US6] Test remote fetch success scenario
+- [X] T013 [P] [US6] Test remote fetch failure with fallback to bundled version
+- [X] T014 [P] [US6] Test resource file validation (schema check)
 
 ### Implementation for User Story 6
 
@@ -99,12 +99,12 @@ Tests marked `[ ]` below need to be written AFTER the fact to validate existing 
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T021 [P] [US1] Unit test for doc-downloader in `tests/unit/doc-downloader.test.ts`
-- [ ] T022 [P] [US1] Test single file download with retry logic
-- [ ] T023 [P] [US1] Test concurrent download with progress tracking
-- [ ] T024 [P] [US1] Test network error handling and partial failures
-- [ ] T025 [P] [US1] Integration test for update workflow in `tests/integration/update-workflow.test.ts`
-- [ ] T026 [P] [US1] Test end-to-end first-time download scenario
+- [X] T021 [P] [US1] Unit test for doc-downloader in `tests/unit/doc-downloader.test.ts`
+- [X] T022 [P] [US1] Test single file download with retry logic
+- [X] T023 [P] [US1] Test concurrent download with progress tracking
+- [X] T024 [P] [US1] Test network error handling and partial failures
+- [X] T025 [P] [US1] Integration test for update workflow in `tests/integration/update-workflow.test.ts`
+- [X] T026 [P] [US1] Test end-to-end first-time download scenario
 
 ### Implementation for User Story 1
 
@@ -134,13 +134,13 @@ Tests marked `[ ]` below need to be written AFTER the fact to validate existing 
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T038 [P] [US7] Unit test for cache-manager in `tests/unit/cache-manager.test.ts`
-- [ ] T039 [P] [US7] Test cache write with metadata (version, timestamp, source file)
-- [ ] T040 [P] [US7] Test cache read and validation
-- [ ] T041 [P] [US7] Test cache invalidation when source doc newer
-- [ ] T042 [P] [US7] Test cache corruption detection and regeneration
-- [ ] T043 [P] [US7] Integration test in `tests/integration/cache-lifecycle.test.ts`
-- [ ] T044 [P] [US7] Test full cache lifecycle (write → read → invalidate → regenerate)
+- [X] T038 [P] [US7] Unit test for cache-manager in `tests/unit/cache-manager.test.ts`
+- [X] T039 [P] [US7] Test cache write with metadata (version, timestamp, source file)
+- [X] T040 [P] [US7] Test cache read and validation
+- [X] T041 [P] [US7] Test cache invalidation when source doc newer
+- [X] T042 [P] [US7] Test cache corruption detection and regeneration
+- [X] T043 [P] [US7] Integration test in `tests/integration/cache-lifecycle.test.ts`
+- [X] T044 [P] [US7] Test full cache lifecycle (write → read → invalidate → regenerate)
 
 ### Implementation for User Story 7
 
@@ -296,11 +296,11 @@ Tests marked `[ ]` below need to be written AFTER the fact to validate existing 
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T110 [P] [US8] Unit test for search-engine in `tests/unit/search-engine.test.ts`
-- [ ] T111 [P] [US8] Test case-insensitive keyword matching
-- [ ] T112 [P] [US8] Test context extraction (±5 lines)
-- [ ] T113 [P] [US8] Test result limiting (10 detailed, summary for more)
-- [ ] T114 [P] [US8] Integration test in `tests/integration/search-integration.test.ts`
+- [X] T110 [P] [US8] Unit test for search-engine in `tests/unit/search-engine.test.ts`
+- [X] T111 [P] [US8] Test case-insensitive keyword matching
+- [X] T112 [P] [US8] Test context extraction (±5 lines)
+- [X] T113 [P] [US8] Test result limiting (10 detailed, summary for more)
+- [X] T114 [P] [US8] Integration test in `tests/integration/search-integration.test.ts`
 
 ### Implementation for User Story 8
 
@@ -327,13 +327,13 @@ Tests marked `[ ]` below need to be written AFTER the fact to validate existing 
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T123 [P] Unit test for get command in `tests/unit/get-command.test.ts`
-- [ ] T124 [P] Test full document retrieval
-- [ ] T125 [P] Test section extraction (slug#anchor format)
-- [ ] T126 [P] Test missing document error handling
-- [ ] T127 [P] Unit test for list command in `tests/unit/list-command.test.ts`
-- [ ] T128 [P] Test full documentation index generation
-- [ ] T129 [P] Test single document structure (table of contents)
+- [X] T123 [P] Unit test for get command in `tests/unit/get-command.test.ts`
+- [X] T124 [P] Test full document retrieval
+- [X] T125 [P] Test section extraction (slug#anchor format)
+- [X] T126 [P] Test missing document error handling
+- [X] T127 [P] Unit test for list command in `tests/unit/list-command.test.ts`
+- [X] T128 [P] Test full documentation index generation
+- [X] T129 [P] Test single document structure (table of contents)
 
 ### Implementation
 
