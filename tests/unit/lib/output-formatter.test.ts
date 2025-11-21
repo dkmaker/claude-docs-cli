@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OutputFormatter } from '../../src/lib/output-formatter.js';
+import { OutputFormatter } from '../../../src/lib/output-formatter.js';
 
 describe('OutputFormatter - AI Mode', () => {
   const formatter = new OutputFormatter('ai');

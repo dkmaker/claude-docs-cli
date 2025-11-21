@@ -2,9 +2,9 @@ import { readFile, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Logger } from '../../src/lib/logger.js';
-import { OutputFormatter } from '../../src/lib/output-formatter.js';
-import type { LogLevel } from '../../src/types/config.js';
+import { Logger } from '../../../src/lib/logger.js';
+import { OutputFormatter } from '../../../src/lib/output-formatter.js';
+import type { LogLevel } from '../../../src/types/config.js';
 
 describe('Logger', () => {
   let tempLogPath: string;

@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { ConfigSchema } from '../../src/types/config.js';
-import { expandPath, getDefaultConfig, loadConfig } from '../../src/utils/config.js';
+import { ConfigSchema } from '../../../src/types/config.js';
+import { expandPath, getDefaultConfig, loadConfig } from '../../../src/utils/config.js';
 
 describe('Configuration Management', () => {
   let tempConfigPath: string;

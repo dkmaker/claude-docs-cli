@@ -4,12 +4,37 @@ Claude Code Documentation Manager - Node.js CLI
 
 ## Installation
 
-### Prerequisites
+### For End Users
+
+Install the latest version directly from GitHub Releases:
+
+```bash
+# Install latest version
+npm install $(curl -s https://raw.githubusercontent.com/OWNER/REPO/main/LATEST_RELEASE.txt)
+```
+
+Or install a specific version:
+
+```bash
+# Install specific version (e.g., v1.2.3)
+npm install https://github.com/OWNER/REPO/releases/download/v1.2.3/claude-docs-1.2.3.tgz
+```
+
+Verify installation:
+
+```bash
+claude-docs --version
+claude-docs --help
+```
+
+### For Contributors
+
+#### Prerequisites
 
 - Node.js 22.x or higher
 - pnpm 10.x or higher (auto-installed via Corepack)
 
-### Setup
+#### Setup
 
 ```bash
 # Clone the repository
@@ -193,6 +218,96 @@ Commander.js provides:
 - **Options/flags**: `.option('-f, --flag', 'description')`
 - **Auto-generated help**: `command --help`
 - **Argument validation**: Automatic error for missing required args
+
+## Releases
+
+This project uses [Changesets](https://github.com/changesets/changesets) for version management and automated GitHub Releases.
+
+### Release Workflow (AI-Assisted)
+
+We provide custom slash commands to streamline the release process:
+
+#### 1. Create a Changeset (After Making Changes)
+
+```bash
+# In Claude Code, after making your changes:
+/changeset "Added new search filter feature"
+
+# Or just:
+/changeset
+
+# The AI will:
+# - Analyze your git changes
+# - Determine appropriate version bump (major/minor/patch)
+# - Write a user-friendly changelog entry
+# - Create the changeset file
+```
+
+#### 2. Preview Version Bump
+
+```bash
+/version
+
+# Shows what version will be released based on pending changesets
+```
+
+#### 3. Create Release
+
+```bash
+/release
+
+# The AI will:
+# - Run `pnpm changeset version` to bump version
+# - Create a release branch
+# - Create a PR with changelog
+# - When you merge the PR, GitHub Actions automatically:
+#   - Runs quality gates
+#   - Creates GitHub Release with tarball
+#   - Updates LATEST_RELEASE.txt
+```
+
+### Manual Workflow (Without AI)
+
+If you prefer to manage changesets manually:
+
+```bash
+# 1. Create a changeset
+pnpm changeset
+# Follow prompts: select bump type and write summary
+
+# 2. Commit the changeset
+git add .changeset/
+git commit -m "Add changeset for new feature"
+
+# 3. When ready to release, run version bump
+pnpm changeset version
+# This updates package.json, CHANGELOG.md, and removes consumed changesets
+
+# 4. Commit and push
+git add .
+git commit -m "chore: version packages"
+git push origin main
+
+# 5. GitHub Actions handles the rest automatically
+```
+
+### Semantic Versioning
+
+- **Major (1.0.0 → 2.0.0)**: Breaking changes
+- **Minor (1.0.0 → 1.1.0)**: New features (backwards-compatible)
+- **Patch (1.0.0 → 1.0.1)**: Bug fixes (backwards-compatible)
+
+### What Happens on Merge to Main
+
+When a version bump PR is merged:
+
+1. ✅ Quality gates run (lint, type-check, tests, build)
+2. ✅ Changesets publishes the new version
+3. ✅ GitHub Release created via **gh CLI** (official tool, no third-party actions)
+4. ✅ Tarball uploaded to release
+5. ✅ LATEST_RELEASE.txt updated
+
+View releases at: `https://github.com/OWNER/REPO/releases`
 
 ## License
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { detectOutputMode, detectOutputModeWithSource } from '../../src/utils/env.js';
+import { detectOutputMode, detectOutputModeWithSource } from '../../../src/utils/env.js';
 
 describe('detectOutputMode', () => {
   let originalEnv: string | undefined;

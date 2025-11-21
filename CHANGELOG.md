@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- a4ae91f: Implement Changesets-based release workflow with AI-assisted management. Replaces semantic-release with Changesets for better developer control over version bumps and changelog quality. Adds three custom slash commands (`/changeset`, `/version`, `/release`) that use AI to analyze changes, determine version bumps, and create release PRs automatically. The GitHub Actions workflow now uses official `gh` CLI instead of third-party actions, minimizing external dependencies. Users can now preview releases, group multiple changes, and maintain human-readable changelogs while still benefiting from full automation.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -8,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-11-20
 
 ### Added
+
 - **Project Foundation**: Complete Node.js CLI infrastructure
+
   - TypeScript 5.4+ with strict mode and ESM support
   - Commander.js v14 for CLI argument parsing
   - Biome v1.9 for unified linting and formatting
@@ -16,12 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - pnpm v10+ package management with strict configuration
 
 - **Development Tools**:
+
   - Automated code quality checks (lint, format, type-check)
   - Comprehensive test suite with 100% coverage
   - Performance benchmarking (--version and --help <50ms)
   - Development scripts for TDD workflow
 
 - **CLI Features**:
+
   - `--version` / `-v`: Display version information
   - `--help` / `-h`: Display help information
   - Command registration system with argument parsing
@@ -30,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Default help display when no arguments provided
 
 - **Code Quality**:
+
   - Zero warnings or errors in all checks
   - 100% test pass rate
   - ESM-only modules
@@ -42,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Development workflow guide
 
 ### Technical Details
+
 - Node.js 22.x LTS (Jod) minimum runtime
 - Commander.js as only production dependency
 - All development tools configured and working
@@ -49,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance optimized (<50ms for basic commands)
 
 ### Notes
+
 This is the **foundation release** providing the infrastructure for the CLI.
 Business logic porting from the bash script will be added in subsequent releases.
 

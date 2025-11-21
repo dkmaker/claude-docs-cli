@@ -21,6 +21,10 @@ const formatter = new OutputFormatter(detectOutputMode());
  */
 export async function searchCommand(query: string): Promise<void> {
   try {
+    // T108: Show 24-hour update reminder
+    const { checkUpdateReminder } = await import('./update-command.js');
+    await checkUpdateReminder();
+
     if (!query || query.trim().length === 0) {
       console.error(formatter.error('Search query cannot be empty'));
       console.error(formatter.info('Usage: claude-docs search <query>'));

@@ -17,10 +17,10 @@ describe('CLI Modes Integration', () => {
   });
 
   describe('AI Mode (CLAUDECODE=1)', () => {
-    it('should exclude advanced commands from help output', () => {
+    it('should exclude advanced commands from help output', { timeout: 10000 }, () => {
       try {
         // Build first
-        execSync('pnpm build', { encoding: 'utf-8', stdio: 'pipe' });
+        execSync('pnpm build', { encoding: 'utf-8', stdio: 'pipe', timeout: 30000 });
 
         const output = execSync('CLAUDECODE=1 node dist/cli.js --help', {
           encoding: 'utf-8',

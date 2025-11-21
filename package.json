@@ -1,6 +1,6 @@
 {
   "name": "claude-docs",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Claude Code Documentation Manager - Node.js CLI",
   "type": "module",
   "main": "dist/cli.js",
@@ -23,9 +23,17 @@
     "prebuild": "pnpm run clean",
     "validate": "pnpm run check && pnpm run type-check && pnpm run test:run",
     "start": "node dist/cli.js",
-    "bench": "time node dist/cli.js --version && time node dist/cli.js --help"
+    "bench": "time node dist/cli.js --version && time node dist/cli.js --help",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm run build && changeset publish"
   },
-  "keywords": ["cli", "documentation", "claude", "markdown"],
+  "keywords": [
+    "cli",
+    "documentation",
+    "claude",
+    "markdown"
+  ],
   "author": "",
   "license": "MIT",
   "engines": {
@@ -38,6 +46,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "2.29.7",
     "@types/node": "^22.19.1",
     "@vitest/coverage-v8": "4.0.12",
     "typescript": "^5.9.3",

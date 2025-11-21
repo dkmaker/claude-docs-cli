@@ -111,6 +111,10 @@ function extractSection(content: string, anchor: string): string | null {
  */
 export async function getCommand(slugWithAnchor: string): Promise<void> {
   try {
+    // T108: Show 24-hour update reminder
+    const { checkUpdateReminder } = await import('./update-command.js');
+    await checkUpdateReminder();
+
     // Parse slug and anchor
     const [slug, anchor] = slugWithAnchor.split('#');
 
