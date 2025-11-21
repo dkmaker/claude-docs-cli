@@ -155,12 +155,23 @@ dist/                # Compiled output (gitignored)
 
 ## Available Commands
 
-Foundation phase (v1.0.0):
+**Core Commands:**
+- `update` - Manage documentation downloads and updates
+  - `update check` - Check for documentation updates (default)
+  - `update commit <message>` - Apply pending updates with changelog message
+  - `update discard` - Discard pending updates
+  - `update status` - Show update status and history
+- `get <slug>` - Get documentation section (supports `slug#anchor` format)
+- `list [doc]` - List all documentation or sections within a document
+- `search <query>` - Search across all documentation
+- `cache` - Manage documentation cache
+  - `cache info` - Display cache statistics (default)
+  - `cache clear` - Clear all cached files
+  - `cache warm` - Pre-generate cache for all documentation
+
+**Global Options:**
 - `--version, -v` - Display version information
 - `--help, -h` - Display help information
-- `test <value>` - Sample command demonstrating registration pattern
-
-Future phases will add: update, get, list, search, cache
 
 ## Adding New Commands
 

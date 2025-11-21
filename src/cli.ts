@@ -5,7 +5,6 @@ import { cacheClearCommand, cacheInfoCommand, cacheWarmCommand } from './command
 import { getCommand } from './commands/get-command.js';
 import { listCommand } from './commands/list-command.js';
 import { searchCommand } from './commands/search-command.js';
-import { testCommand } from './commands/test-command.js';
 import {
   updateCheckCommand,
   updateCommitCommand,
@@ -28,14 +27,6 @@ export function main() {
     .version(CLI_VERSION, '-v, --version', 'Display version information')
     .description(CLI_DESCRIPTION)
     .helpOption('-h, --help', 'Display help information');
-
-  // Register commands
-  program
-    .command('test <value>')
-    .description('Test command to demonstrate command registration pattern')
-    .action((value: string) => {
-      testCommand(value);
-    });
 
   // Update command with subcommands
   const updateCmd = program
