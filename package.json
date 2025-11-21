@@ -1,6 +1,6 @@
 {
   "name": "claude-docs",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Claude Code Documentation Manager - Node.js CLI",
   "private": true,
   "type": "module",
