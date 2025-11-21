@@ -1,22 +1,16 @@
 <!--
   SYNC IMPACT REPORT
   ==================
-  Version Change: 1.0.0 → 1.1.0
-  Last Amended: 2025-01-20
+  Version Change: 1.2.0 → 1.3.0
+  Last Amended: 2025-11-21
 
-  Changes in v1.1.0:
-  - Added Principle VIII: Test-Driven Development (TDD)
-  - Changed test framework from Node.js built-in to Vitest
-  - Added vitest to required development dependencies
-  - **Added 100% test pass rate requirement (NON-NEGOTIABLE)**
-  - Added "relevant tests only" clarification
-  - Updated Testing Standards section with TDD workflow and completion criteria
-  - Updated Development Workflow with test commands
-  - Updated Pre-publish Checklist with 100% pass rate requirement
-  - Updated CI/CD Requirements for Vitest and test pass rate enforcement
-  - Updated Complexity Justification examples (failing tests = FORBIDDEN)
-  - Updated Compliance Review checklist with TDD and 100% pass rate requirements
-  - Added Feature Completion Criteria section
+  Changes in v1.3.0:
+  - Added Principle X: Dual-Mode Output (AI and Human Friendly)
+  - ALL commands MUST use OutputFormatter for status/feedback messages
+  - Supports CLAUDECODE=1 for AI-optimized output vs rich user output
+  - Centralizes mode detection and formatting logic
+  - Document content remains unformatted for piping/processing
+  - Updated Compliance Review checklist to include OutputFormatter verification
 
   Principles:
   - I. Modern Node.js LTS Foundation (unchanged)
@@ -26,19 +20,24 @@
   - V. Unified Tooling (Biome) (unchanged)
   - VI. Native ES Modules (unchanged)
   - VII. Performance & Startup Speed (unchanged)
-  - VIII. Test-Driven Development (NEW)
+  - VIII. Test-Driven Development (unchanged)
+  - IX. Standard Data Directory (unchanged)
+  - X. Dual-Mode Output (NEW in v1.3.0)
 
   Additional Sections:
-  - Technology Stack Standards (updated: added vitest)
-  - Development Workflow (updated: added test commands)
+  - Technology Stack Standards (unchanged)
+  - Development Workflow (unchanged)
+  - Project Structure (unchanged)
 
   Template Updates Required:
-  ✅ plan-template.md - Constitution Check section aligns
+  ✅ plan-template.md - Should mention OutputFormatter in implementation patterns
   ✅ spec-template.md - Requirements structure compatible
-  ⚠️ tasks-template.md - Should add TDD workflow guidance
+  ✅ tasks-template.md - Should include OutputFormatter integration tasks
 
   Follow-up Actions:
-  - Consider updating tasks-template.md to include "write tests first" guidance
+  - Verify all existing commands use OutputFormatter (update-command, get-command, list-command, search-command, cache-command completed)
+  - Update plan-template.md to reference OutputFormatter in output handling sections
+  - Update tasks-template.md to include OutputFormatter integration in polish phase
 -->
 
 # Modern Node.js CLI Constitution
@@ -242,6 +241,77 @@ Vitest provides the fastest test execution while maintaining Jest compatibility,
 it ideal for rapid TDD cycles. Native ESM and TypeScript support eliminate configuration
 overhead.
 
+### IX. Standard Data Directory
+
+**ALL application data MUST be stored in ~/.claude-docs/ directory.**
+
+Standard directory structure:
+```
+~/.claude-docs/
+├── config.json       # Application configuration
+├── cache/            # Cached data (documentation, downloads)
+├── logs/             # Application logs
+└── docs/             # Local documentation storage
+```
+
+Path conventions:
+- Configuration file: `~/.claude-docs/config.json`
+- Log files: `~/.claude-docs/logs/` (with rotation)
+- Cache directory: `~/.claude-docs/cache/`
+- Documentation: `~/.claude-docs/docs/`
+- ALL paths MUST be relative to `~/.claude-docs/` base directory
+- Path expansion: `~` MUST be expanded to user's home directory at runtime
+
+Default configuration values MUST use these paths:
+```typescript
+{
+  logFile: '~/.claude-docs/logs/app.log',
+  cacheDir: '~/.claude-docs/cache',
+  docsPath: '~/.claude-docs/docs',
+  configPath: '~/.claude-docs/config.json'
+}
+```
+
+**Rationale**: Standardizing on a single data directory provides predictable behavior
+across all installations, simplifies backup and cleanup operations, and follows
+Unix conventions for application data storage. Using `~/.claude-docs/` instead of
+`~/.claude/` prevents conflicts with other tools and provides clear namespace
+ownership. Consistent path conventions make troubleshooting easier and improve
+user experience. All configuration, logs, and cached data live in one predictable
+location that users can easily find, back up, or remove.
+
+### X. Dual-Mode Output (AI and Human Friendly)
+
+**ALL command output MUST use the OutputFormatter for dual-mode support.**
+
+Output modes based on `CLAUDECODE` environment variable:
+- **AI mode** (`CLAUDECODE=1`): Minimal markdown output optimized for AI agents
+- **User mode** (default): Rich ANSI-colored output for human users
+
+Implementation requirements:
+- ALL commands MUST initialize OutputFormatter: `new OutputFormatter(detectOutputMode())`
+- Status/feedback messages MUST use formatter methods:
+  - `formatter.info()` - Informational messages
+  - `formatter.success()` - Success messages (green in user mode)
+  - `formatter.error()` - Error messages (red in user mode)
+  - `formatter.warning()` - Warning messages (yellow in user mode)
+  - `formatter.heading()` - Section headings
+  - `formatter.list()` - Bullet lists
+- Document content MUST remain unformatted (raw markdown output)
+- Help text MAY differ between modes (AI mode: essential commands only)
+
+**FORBIDDEN**:
+- Direct `console.log()` for status/error messages (use formatter methods)
+- ANSI color codes embedded in strings (use formatter)
+- Mode-specific conditional branches scattered throughout code (centralize in formatter)
+
+**Rationale**: CLI tools serve both AI agents and human users. AI agents require clean,
+parseable markdown without ANSI codes. Humans expect rich, colored terminal output.
+Using OutputFormatter centralizes mode detection and formatting logic, ensuring consistent
+behavior and preventing mode-specific bugs. This design allows the same command code to
+serve both audiences without duplication. Document content remains unformatted to enable
+piping and processing by both AI and shell tools.
+
 ## Technology Stack Standards
 
 ### Required Dependencies
@@ -283,6 +353,12 @@ biome.json
 .npmrc
 ```
 
+**Data Directory Conventions:**
+- Application data: `~/.claude-docs/`
+- MUST be added to `.gitignore`
+- MUST be created on first run if missing
+- MUST support `~` expansion in configuration
+
 **package.json bin field:**
 ```json
 {
@@ -316,6 +392,9 @@ biome.json
 - Output formatting
 - Integration tests for command workflows
 - Unit tests for utility functions
+- File operations in `~/.claude-docs/` directory
+- Configuration loading from `~/.claude-docs/config.json`
+- Path expansion for `~/.claude-docs/` paths
 
 **Test framework**: Vitest (modern, fast, Vite-powered)
 
@@ -485,6 +564,8 @@ the "Complexity Tracking" section. Justifications MUST explain:
 - Using non-LTS Node.js versions
 - Committing code with failing tests (ABSOLUTELY FORBIDDEN)
 - Using `.skip()` or `.todo()` in production code (FORBIDDEN)
+- Storing data outside `~/.claude-docs/` directory
+- Using direct console.log/error for command feedback instead of OutputFormatter
 
 ### Compliance Review
 
@@ -502,6 +583,8 @@ the "Complexity Tracking" section. Justifications MUST explain:
 ✅ TDD workflow followed (tests written first)
 ✅ Vitest configured for testing
 ✅ 100% test pass rate achieved (ALL tests passing, ZERO failures)
+✅ Data directory standard (~/.claude-docs/) followed
+✅ Dual-mode output (OutputFormatter) used for all command feedback
 
 Violations: None
 ```
@@ -511,6 +594,8 @@ A feature implementation is ONLY complete when:
 1. All relevant tests are written (TDD compliance)
 2. `pnpm test` shows 100% pass rate (no failures, no skips)
 3. No regressions (existing tests still pass)
-4. All other constitution checks pass
+4. All data stored in `~/.claude-docs/` directory
+5. All command output uses OutputFormatter for dual-mode support
+6. All other constitution checks pass
 
-**Version**: 1.1.0 | **Ratified**: 2025-01-20 | **Last Amended**: 2025-01-20
+**Version**: 1.3.0 | **Ratified**: 2025-01-20 | **Last Amended**: 2025-11-21

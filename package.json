@@ -18,7 +18,7 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "tsc --project tsconfig.build.json && cp claude-docs-resources.json dist/",
     "clean": "rm -rf dist",
     "prebuild": "pnpm run clean",
     "validate": "pnpm run check && pnpm run type-check && pnpm run test:run",
@@ -33,13 +33,15 @@
     "pnpm": ">=10.0.0"
   },
   "dependencies": {
-    "commander": "14.0.2"
+    "commander": "14.0.2",
+    "diff": "8.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^22.19.1",
     "@vitest/coverage-v8": "4.0.12",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.12"
+    "vitest": "^4.0.12",
+    "zod": "4.1.12"
   }
 }

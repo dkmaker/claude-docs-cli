@@ -1,0 +1,5 @@
+{
+  "logLevel": "invalid-level",
+  "maxLogSize": -100,
+  "maxLogFiles": "not-a-number"
+}

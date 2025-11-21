@@ -18,6 +18,9 @@ logs/
 npm-debug.log*
 pnpm-debug.log*
 
+# Claude Docs CLI data directory
+.claude-docs/
+
 # Testing
 coverage/
 .nyc_output/

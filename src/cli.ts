@@ -1,10 +1,26 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { cacheClearCommand, cacheInfoCommand, cacheWarmCommand } from './commands/cache-command.js';
+import { getCommand } from './commands/get-command.js';
+import { listCommand } from './commands/list-command.js';
+import { searchCommand } from './commands/search-command.js';
 import { testCommand } from './commands/test-command.js';
+import {
+  updateCheckCommand,
+  updateCommitCommand,
+  updateDiscardCommand,
+  updateStatusCommand,
+} from './commands/update-command.js';
+import { OutputFormatter } from './lib/output-formatter.js';
 import { CLI_DESCRIPTION, CLI_NAME, CLI_VERSION } from './utils/config.js';
+import { detectOutputMode } from './utils/env.js';
 
 export function main() {
+  // Initialize dual-mode output system
+  const mode = detectOutputMode();
+  const formatter = new OutputFormatter(mode);
+
   const program = new Command();
 
   program
@@ -21,6 +37,114 @@ export function main() {
       testCommand(value);
     });
 
+  // Update command with subcommands
+  const updateCmd = program
+    .command('update')
+    .description('Manage documentation downloads and updates');
+
+  updateCmd
+    .command('check')
+    .description('Check for documentation updates (default action)')
+    .action(() => {
+      updateCheckCommand();
+    });
+
+  updateCmd
+    .command('commit <message>')
+    .description('Apply pending updates with changelog message')
+    .action((message: string) => {
+      updateCommitCommand(message);
+    });
+
+  updateCmd
+    .command('discard')
+    .description('Discard pending updates')
+    .action(() => {
+      updateDiscardCommand();
+    });
+
+  updateCmd
+    .command('status')
+    .description('Show update status and history')
+    .action(() => {
+      updateStatusCommand();
+    });
+
+  // Default update action (same as 'update check')
+  updateCmd.action(() => {
+    updateCheckCommand();
+  });
+
+  // Cache command with subcommands
+  const cacheCmd = program.command('cache').description('Manage documentation cache');
+
+  cacheCmd
+    .command('clear')
+    .description('Clear all cached files')
+    .action(() => {
+      cacheClearCommand();
+    });
+
+  cacheCmd
+    .command('info')
+    .description('Display cache statistics')
+    .action(() => {
+      cacheInfoCommand();
+    });
+
+  cacheCmd
+    .command('warm')
+    .description('Pre-generate cache for all documentation')
+    .action(() => {
+      cacheWarmCommand();
+    });
+
+  // Default cache action shows info
+  cacheCmd.action(() => {
+    cacheInfoCommand();
+  });
+
+  // Search command
+  program
+    .command('search <query>')
+    .description('Search across all documentation')
+    .action((query: string) => {
+      searchCommand(query);
+    });
+
+  // Get command - retrieve documentation
+  program
+    .command('get <slug>')
+    .description('Get documentation section (supports slug#anchor format)')
+    .action((slug: string) => {
+      getCommand(slug);
+    });
+
+  // List command - list all docs or sections within a doc
+  program
+    .command('list [doc]')
+    .description('List all documentation or sections within a specific document')
+    .action((doc?: string) => {
+      listCommand(doc);
+    });
+
+  // Advanced commands (only in user mode)
+  if (mode === 'user') {
+    program
+      .command('status')
+      .description('Show cache and documentation status')
+      .action(() => {
+        console.log(formatter.warning('Status command not yet implemented'));
+      });
+
+    program
+      .command('reset-cache')
+      .description('Clear documentation cache')
+      .action(() => {
+        console.log(formatter.warning('Reset cache command not yet implemented'));
+      });
+  }
+
   // Show help by default when no arguments provided
   if (process.argv.length === 2) {
     program.outputHelp();
@@ -29,7 +153,7 @@ export function main() {
 
   // Error handling for unknown commands
   program.on('command:*', () => {
-    console.error(`error: unknown command '${program.args.join(' ')}'`);
+    console.error(formatter.error(`unknown command '${program.args.join(' ')}'`));
     console.error(`\nRun '${CLI_NAME} --help' for available commands`);
     process.exit(1);
   });
