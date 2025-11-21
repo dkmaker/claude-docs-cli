@@ -1,11 +1,11 @@
 # Dependencies
 node_modules/
-pnpm-lock.yaml
 
 # Build output
 dist/
 build/
 *.tsbuildinfo
+*.tgz
 
 # Environment variables
 .env
