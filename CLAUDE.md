@@ -9,6 +9,8 @@ Auto-generated from all feature plans. Last updated: 2025-11-21
 - Vitest 4.0.12 (testing framework)
 - Node.js native fetch() for HTTP (zero dependencies)
 - Custom markdown transformations (zero dependencies)
+- TypeScript 5.4+, Node.js 22.x LTS (existing project stack) + GitHub Actions (workflow engine), npm (packaging), GITHUB_TOKEN (authentication) (004-github-tarball-deploy)
+- GitHub Releases (tarball storage), Git tags (version tracking), repository root file (latest URL reference) (004-github-tarball-deploy)
 
 ## Project Structure
 
@@ -55,11 +57,11 @@ npm run validate      # Run all checks (lint + type-check + test)
 TypeScript 5.4+ with strict mode enabled. Follow standard conventions.
 
 ## Recent Changes
+- 004-github-tarball-deploy: Added TypeScript 5.4+, Node.js 22.x LTS (existing project stack) + GitHub Actions (workflow engine), npm (packaging), GITHUB_TOKEN (authentication)
 - 003-doc-download-update: Implemented complete documentation download and update management system with caching, search, and changelog tracking
 
 - 002-dual-mode-output: Added dual-mode output system with logging and file operations
 
-- 001-nodejs-cli-port: Added Node.js CLI foundation infrastructure
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
