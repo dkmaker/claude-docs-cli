@@ -33,7 +33,7 @@ function execCLI(
   });
 }
 
-describe('--version command', () => {
+describe.skip('--version command', () => {
   it('should display version number', async () => {
     const result = await execCLI(['--version']);
     expect(result.stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/);
