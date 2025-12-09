@@ -1,27 +1,48 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { ResourceConfiguration } from '../types/documentation.js';
+import type {
+  DocumentCategory,
+  DocumentSection,
+  ResourceConfiguration,
+} from '../types/documentation.js';
 import { fetchWithRetry } from '../utils/http-client.js';
 import { fileExists, safeWriteFile } from './file-ops.js';
 
 /**
- * Resource loader - loads documentation URLs from remote GitHub with bundled fallback
+ * Resource loader - loads documentation URLs from remote llms.txt with bundled fallback
  */
 
 /**
- * GitHub URL for remote resource configuration
+ * Official Claude Code llms.txt URL (primary source)
  */
-export const REMOTE_RESOURCE_URL =
-  'https://raw.githubusercontent.com/dkmaker/claude-docs-cli/refs/heads/main/claude-docs-resources.json';
+export const REMOTE_LLMS_TXT_URL = 'https://code.claude.com/docs/llms.txt';
 
 /**
- * Cache file for remote resource configuration
+ * Bundled llms.txt fallback path
  */
-const RESOURCE_CACHE_FILE = join(
+const BUNDLED_LLMS_TXT_PATH = join(
+  dirname(dirname(fileURLToPath(import.meta.url))),
+  'artifacts',
+  'llms.txt',
+);
+
+/**
+ * Bundled categories mapping path
+ */
+const BUNDLED_CATEGORIES_PATH = join(
+  dirname(dirname(fileURLToPath(import.meta.url))),
+  'artifacts',
+  'categories.json',
+);
+
+/**
+ * Cache file for remote llms.txt
+ */
+const LLMS_TXT_CACHE_FILE = join(
   process.env.HOME || process.env.USERPROFILE || '~',
   '.claude-docs',
-  '.resource-cache.json',
+  '.llms-txt-cache.txt',
 );
 
 /**
@@ -30,41 +51,180 @@ const RESOURCE_CACHE_FILE = join(
 const CACHE_DURATION = 60 * 60 * 1000;
 
 /**
- * Get path to bundled resource file
+ * Parsed document from llms.txt
  */
-function getBundledResourcePath(): string {
-  // In development: use the file from repository root
-  // In production (dist/): use the file copied during build
-  // The file is at dist/claude-docs-resources.json
-  // This file is in dist/lib/resource-loader.js, so we need to go up one level
-  const currentDir = dirname(fileURLToPath(import.meta.url));
-  const distDir = dirname(currentDir); // Go up from dist/lib to dist
-  return join(distDir, 'claude-docs-resources.json');
+interface ParsedDocument {
+  title: string;
+  url: string;
+  filename: string;
+  description: string;
 }
 
 /**
- * Load bundled resource configuration
- *
- * @returns Resource configuration from bundled file
- * @throws Error if bundled file cannot be loaded
+ * Category mapping from categories.json
  */
-async function loadBundledConfig(): Promise<ResourceConfiguration> {
-  const bundledPath = getBundledResourcePath();
+interface CategoryMapping {
+  version: string;
+  categories: CategoryMappingEntry[];
+}
 
-  try {
-    const content = await readFile(bundledPath, 'utf-8');
-    const config = JSON.parse(content) as ResourceConfiguration;
+interface CategoryMappingEntry {
+  name: string;
+  slug: string;
+  description: string;
+  urlPatterns: string[];
+}
 
-    if (!validateResourceConfig(config)) {
-      throw new Error('Bundled resource file has invalid structure');
+/**
+ * Parse llms.txt markdown format
+ * Format: - [Title](URL): Description
+ *
+ * @param content - Raw llms.txt content
+ * @returns Array of parsed documents
+ */
+function parseLlmsTxt(content: string): ParsedDocument[] {
+  const lines = content.split('\n');
+  const documents: ParsedDocument[] = [];
+
+  for (const line of lines) {
+    // Match: - [Title](URL): Description
+    const match = line.match(/^-\s+\[([^\]]+)\]\(([^)]+)\):\s+(.+)$/);
+
+    if (match) {
+      const [, title, url, description] = match;
+
+      // Skip if any capture group is undefined
+      if (!title || !url || !description) {
+        continue;
+      }
+
+      // Extract filename from URL
+      // URL: https://code.claude.com/docs/en/overview.md
+      // Filename: overview.md
+      const urlPath = new URL(url.trim()).pathname;
+      const filename = urlPath.split('/').pop() || '';
+
+      documents.push({
+        title: title.trim(),
+        url: url.trim(),
+        filename: filename,
+        description: description.trim(),
+      });
     }
-
-    return config;
-  } catch (error) {
-    throw new Error(
-      `Failed to load bundled resource configuration: ${error instanceof Error ? error.message : String(error)}`,
-    );
   }
+
+  return documents;
+}
+
+/**
+ * Apply category mapping to parsed documents
+ *
+ * @param documents - Parsed documents from llms.txt
+ * @param mapping - Category mapping from categories.json
+ * @returns Resource configuration with categorized documents
+ */
+function applyCategoryMapping(
+  documents: ParsedDocument[],
+  mapping: CategoryMapping,
+): ResourceConfiguration {
+  // Create URL-to-category lookup
+  const urlToCategory = new Map<string, CategoryMappingEntry>();
+
+  for (const category of mapping.categories) {
+    if (category.slug === 'uncategorized') continue;
+
+    for (const urlPattern of category.urlPatterns) {
+      urlToCategory.set(urlPattern, category);
+    }
+  }
+
+  // Find uncategorized category
+  const uncategorizedCategory = mapping.categories.find((c) => c.slug === 'uncategorized');
+
+  if (!uncategorizedCategory) {
+    throw new Error('categories.json missing "uncategorized" category');
+  }
+
+  // Build categories with docs
+  const categoryMap = new Map<string, DocumentCategory>();
+  const uncategorizedDocs: DocumentSection[] = [];
+
+  for (const doc of documents) {
+    const mappedCategory = urlToCategory.get(doc.url);
+
+    if (mappedCategory) {
+      // Add to mapped category
+      if (!categoryMap.has(mappedCategory.slug)) {
+        categoryMap.set(mappedCategory.slug, {
+          name: mappedCategory.name,
+          slug: mappedCategory.slug,
+          description: mappedCategory.description,
+          docs: [],
+        });
+      }
+
+      const category = categoryMap.get(mappedCategory.slug);
+      if (category) {
+        category.docs.push({
+          title: doc.title,
+          url: doc.url,
+          filename: doc.filename,
+          description: doc.description,
+        });
+      }
+    } else {
+      // Add to uncategorized
+      uncategorizedDocs.push({
+        title: doc.title,
+        url: doc.url,
+        filename: doc.filename,
+        description: doc.description,
+      });
+    }
+  }
+
+  // Build final categories array (preserve order from mapping)
+  const categories: DocumentCategory[] = [];
+
+  for (const mappingEntry of mapping.categories) {
+    if (mappingEntry.slug === 'uncategorized') {
+      // Add uncategorized at the end if it has docs
+      if (uncategorizedDocs.length > 0) {
+        categories.push({
+          name: uncategorizedCategory.name,
+          slug: uncategorizedCategory.slug,
+          description: uncategorizedCategory.description,
+          docs: uncategorizedDocs,
+        });
+      }
+    } else {
+      const category = categoryMap.get(mappingEntry.slug);
+      if (category && category.docs.length > 0) {
+        categories.push(category);
+      }
+    }
+  }
+
+  return { categories };
+}
+
+/**
+ * Load bundled llms.txt
+ *
+ * @returns Bundled llms.txt content
+ */
+async function loadBundledLlmsTxt(): Promise<string> {
+  return readFile(BUNDLED_LLMS_TXT_PATH, 'utf-8');
+}
+
+/**
+ * Load bundled categories.json
+ *
+ * @returns Bundled category mapping
+ */
+async function loadBundledCategories(): Promise<CategoryMapping> {
+  const content = await readFile(BUNDLED_CATEGORIES_PATH, 'utf-8');
+  return JSON.parse(content) as CategoryMapping;
 }
 
 /**
@@ -73,82 +233,56 @@ async function loadBundledConfig(): Promise<ResourceConfiguration> {
  * @returns Cached configuration or null if invalid/expired
  */
 async function loadCachedConfig(): Promise<ResourceConfiguration | null> {
-  if (!(await fileExists(RESOURCE_CACHE_FILE))) {
+  // Check if cache file exists
+  if (!(await fileExists(LLMS_TXT_CACHE_FILE))) {
     return null;
   }
 
   try {
-    const content = await readFile(RESOURCE_CACHE_FILE, 'utf-8');
-    const cached = JSON.parse(content) as {
-      timestamp: number;
-      config: ResourceConfiguration;
-    };
+    // Check cache age
+    const stats = await stat(LLMS_TXT_CACHE_FILE);
+    const age = Date.now() - stats.mtimeMs;
 
-    // Check if cache is still valid
-    const age = Date.now() - cached.timestamp;
     if (age > CACHE_DURATION) {
       return null;
     }
 
-    if (!validateResourceConfig(cached.config)) {
+    // Load cached llms.txt
+    const llmsContent = await readFile(LLMS_TXT_CACHE_FILE, 'utf-8');
+    const documents = parseLlmsTxt(llmsContent);
+
+    // Load categories (always from bundle)
+    const mapping = await loadBundledCategories();
+
+    // Apply mapping
+    const config = applyCategoryMapping(documents, mapping);
+
+    if (!validateResourceConfig(config)) {
       return null;
     }
 
-    return cached.config;
+    return config;
   } catch {
     return null;
   }
 }
 
 /**
- * Cache remote configuration
+ * Cache remote llms.txt content
  *
- * @param config - Configuration to cache
+ * @param llmsContent - Raw llms.txt content to cache
  */
-async function cacheConfig(config: ResourceConfiguration): Promise<void> {
-  const cached = {
-    timestamp: Date.now(),
-    config,
-  };
-
+async function cacheConfig(llmsContent: string): Promise<void> {
   try {
-    await safeWriteFile(RESOURCE_CACHE_FILE, JSON.stringify(cached, null, 2));
+    await safeWriteFile(LLMS_TXT_CACHE_FILE, llmsContent);
   } catch {
     // Caching is not critical, so we don't throw
   }
 }
 
 /**
- * Fetch remote resource configuration
- *
- * @returns Resource configuration from GitHub
- * @throws Error if fetch fails
- */
-async function fetchRemoteConfig(): Promise<ResourceConfiguration> {
-  const result = await fetchWithRetry(REMOTE_RESOURCE_URL, {
-    timeout: 5000,
-    maxRetries: 2,
-  });
-
-  if (!result.success || !result.content) {
-    throw new Error(result.error || 'Failed to fetch remote resource configuration');
-  }
-
-  const config = JSON.parse(result.content) as ResourceConfiguration;
-
-  if (!validateResourceConfig(config)) {
-    throw new Error('Remote resource file has invalid structure');
-  }
-
-  // Cache successful fetch
-  await cacheConfig(config);
-
-  return config;
-}
-
-/**
  * Load resource configuration
- * Tries to fetch from remote GitHub URL, falls back to bundled version
+ * Tries to fetch from remote llms.txt, falls back to bundled version
  *
  * @returns Resource configuration
  * @throws Error if both remote and bundled loading fail
@@ -160,19 +294,54 @@ async function fetchRemoteConfig(): Promise<ResourceConfiguration> {
  * ```
  */
 export async function loadResourceConfig(): Promise<ResourceConfiguration> {
-  // Try cached remote config first
+  // Try cached remote first
   const cached = await loadCachedConfig();
   if (cached) {
     return cached;
   }
 
-  // Try fetching from remote
+  // Try remote fetch
   try {
-    return await fetchRemoteConfig();
+    // Fetch llms.txt from official source
+    const llmsResult = await fetchWithRetry(REMOTE_LLMS_TXT_URL, {
+      timeout: 5000,
+      maxRetries: 2,
+    });
+
+    if (!llmsResult.success || !llmsResult.content) {
+      throw new Error(llmsResult.error || 'Failed to fetch llms.txt');
+    }
+
+    // Parse documents
+    const documents = parseLlmsTxt(llmsResult.content);
+
+    // Load categories mapping (always bundled - we control this)
+    const mapping = await loadBundledCategories();
+
+    // Apply mapping
+    const config = applyCategoryMapping(documents, mapping);
+
+    if (!validateResourceConfig(config)) {
+      throw new Error('Generated config has invalid structure');
+    }
+
+    // Cache successful result
+    await cacheConfig(llmsResult.content);
+
+    return config;
   } catch (remoteError) {
-    // Remote fetch failed, fall back to bundled version
+    // Remote fetch failed, fall back to bundled
     try {
-      return await loadBundledConfig();
+      const llmsContent = await loadBundledLlmsTxt();
+      const documents = parseLlmsTxt(llmsContent);
+      const mapping = await loadBundledCategories();
+      const config = applyCategoryMapping(documents, mapping);
+
+      if (!validateResourceConfig(config)) {
+        throw new Error('Bundled config has invalid structure');
+      }
+
+      return config;
     } catch (bundledError) {
       throw new Error(
         `Failed to load resource configuration. Remote: ${remoteError instanceof Error ? remoteError.message : String(remoteError)}, Bundled: ${bundledError instanceof Error ? bundledError.message : String(bundledError)}`,

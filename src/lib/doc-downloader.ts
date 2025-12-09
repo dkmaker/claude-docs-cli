@@ -51,8 +51,8 @@ export async function downloadDocument(
 ): Promise<DownloadResult> {
   const { maxRetries = 3, retryDelay = 2000, timeout = 30000 } = options;
 
-  // Append .md to URL (the URLs in the JSON don't include the extension)
-  const mdUrl = `${doc.url}.md`;
+  // URLs from llms.txt already include .md extension
+  const mdUrl = doc.url;
 
   // Download from URL
   const result = await downloadFile(mdUrl, {
