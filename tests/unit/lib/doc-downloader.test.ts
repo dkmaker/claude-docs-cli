@@ -51,7 +51,7 @@ describe('Document Downloader', () => {
 
   const mockDoc: DocumentSection = {
     title: 'Test Document',
-    url: 'https://example.com/test-doc',
+    url: 'https://example.com/test-doc.md',
     filename: 'test-doc.md',
     description: 'A test document',
   };
@@ -65,13 +65,13 @@ describe('Document Downloader', () => {
         docs: [
           {
             title: 'Doc 1',
-            url: 'https://example.com/doc1',
+            url: 'https://example.com/doc1.md',
             filename: 'doc1.md',
             description: 'First doc',
           },
           {
             title: 'Doc 2',
-            url: 'https://example.com/doc2',
+            url: 'https://example.com/doc2.md',
             filename: 'doc2.md',
             description: 'Second doc',
           },
@@ -195,7 +195,7 @@ describe('Document Downloader', () => {
       await downloadDocument(mockDoc, options);
 
       expect(downloadSpy).toHaveBeenCalledWith(
-        `${mockDoc.url}.md`,
+        mockDoc.url, // URLs already include .md
         expect.objectContaining({
           maxRetries: 5,
           retryDelay: 1000,
@@ -205,7 +205,7 @@ describe('Document Downloader', () => {
       expect(writeSpy).toHaveBeenCalled();
     });
 
-    it('should append .md extension to URL', async () => {
+    it('should use URL with .md extension from llms.txt', async () => {
       const mockContent = '# Test';
 
       const downloadSpy = vi.spyOn(httpClient, 'downloadFile').mockResolvedValue({
@@ -218,7 +218,7 @@ describe('Document Downloader', () => {
 
       await downloadDocument(mockDoc);
 
-      // Should append .md to the URL
+      // URLs from llms.txt already include .md extension
       expect(downloadSpy).toHaveBeenCalledWith(
         'https://example.com/test-doc.md',
         expect.objectContaining({

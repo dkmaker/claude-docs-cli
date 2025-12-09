@@ -55,6 +55,7 @@ export interface ListItem {
   level?: number; // For list_sections (heading depth)
   category?: string; // Category name
   anchor?: string; // For list_sections - the anchor slug to use with get
+  description?: string; // Brief description from llms.txt
 }
 
 // ============================================================================

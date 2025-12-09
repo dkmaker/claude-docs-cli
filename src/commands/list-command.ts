@@ -112,6 +112,7 @@ async function generateFullDocumentationData(
         title: doc.title,
         sectionCount,
         category: category.name,
+        description: doc.description,
       };
 
       items.push(item);

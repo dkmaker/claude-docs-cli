@@ -86,91 +86,57 @@ export class AIRenderer implements Renderer {
       output += '# Document Sections\n\n';
     }
 
-    // Build table with calculated column widths
+    // Ultra-compact inline format for list_all
     if (data.type === 'list_all') {
-      // Calculate column widths
-      const slugWidth = Math.max(4, ...data.items.map((i) => i.slug.length));
-      const titleWidth = Math.max(5, ...data.items.map((i) => i.title.length));
-      const categoryWidth = Math.max(8, ...data.items.map((i) => i.category?.length ?? 0));
-      const sectionsWidth = 8;
-
-      // Calculate command column width
-      const commandWidth = Math.max(7, ...data.items.map((i) => i.slug.length + 16)); // "claude-docs get " = 16
-
       // Show by category if available
       if (data.categories && data.categories.length > 0) {
         for (const category of data.categories) {
           output += `## ${category.name}\n\n`;
 
-          // Header
-          output += `| ${'Slug'.padEnd(slugWidth)} | ${'Title'.padEnd(titleWidth)} | ${'Sections'.padEnd(sectionsWidth)} | ${'Command'.padEnd(commandWidth)} |\n`;
-          output += `|${'-'.repeat(slugWidth + 2)}|${'-'.repeat(titleWidth + 2)}|${'-'.repeat(sectionsWidth + 2)}|${'-'.repeat(commandWidth + 2)}|\n`;
-
-          // Rows for this category
+          // Ultra-compact: one line per doc
           for (const item of category.docs) {
-            const sections = String(item.sectionCount ?? 'N/A');
+            const sections = item.sectionCount ?? 0;
+            const description = item.description ? `*${item.description}*` : '';
             const command = `\`claude-docs get ${item.slug}\``;
-            output += `| ${item.slug.padEnd(slugWidth)} | ${item.title.padEnd(titleWidth)} | ${sections.padEnd(sectionsWidth)} | ${command.padEnd(commandWidth + 2)} |\n`;
+
+            output += `**${item.slug}** (${sections} sections)`;
+            if (description) {
+              output += ` • ${description}`;
+            }
+            output += ` → ${command}\n\n`;
           }
 
-          output += '\n';
+          output += '---\n\n';
         }
       } else {
-        // Fallback: single table (if no categories)
-        output += `| ${'Slug'.padEnd(slugWidth)} | ${'Title'.padEnd(titleWidth)} | ${'Sections'.padEnd(sectionsWidth)} | ${'Command'.padEnd(commandWidth)} |\n`;
-        output += `|${'-'.repeat(slugWidth + 2)}|${'-'.repeat(titleWidth + 2)}|${'-'.repeat(sectionsWidth + 2)}|${'-'.repeat(commandWidth + 2)}|\n`;
-
+        // Fallback: simple list without categories
         for (const item of data.items) {
-          const sections = String(item.sectionCount ?? 'N/A');
+          const sections = item.sectionCount ?? 0;
+          const description = item.description ? `*${item.description}*` : '';
           const command = `\`claude-docs get ${item.slug}\``;
-          output += `| ${item.slug.padEnd(slugWidth)} | ${item.title.padEnd(titleWidth)} | ${sections.padEnd(sectionsWidth)} | ${command.padEnd(commandWidth + 2)} |\n`;
+
+          output += `**${item.slug}** (${sections} sections)`;
+          if (description) {
+            output += ` • ${description}`;
+          }
+          output += ` → ${command}\n\n`;
         }
       }
     } else {
-      // Calculate column widths for sections
-      const levelWidth = 5; // "Level" header
-      const titleWidth = Math.max(
-        13,
-        ...data.items.map((i) => i.title.length + ((i.level ?? 1) - 1) * 2),
-      );
-      const commandWidth = Math.max(
-        7,
-        ...data.items.map((i) => `${i.slug}#${i.anchor}`.length + 18), // "claude-docs get " = 16 chars
-      );
-
-      output += `| ${'Level'.padEnd(levelWidth)} | ${'Section Title'.padEnd(titleWidth)} | ${'Command'.padEnd(commandWidth)} |\n`;
-      output += `|${'-'.repeat(levelWidth + 2)}|${'-'.repeat(titleWidth + 2)}|${'-'.repeat(commandWidth + 2)}|\n`;
+      // Compact list format for TOC (list_sections)
+      output += '## Sections\n\n';
 
       for (const item of data.items) {
-        const indent = '  '.repeat((item.level ?? 1) - 1);
-        const level = '#'.repeat(item.level ?? 1);
-        const title = indent + item.title;
+        const level = item.level ?? 1;
+        const indent = '  '.repeat(level - 1);
+        const bullet = level > 1 ? '- ' : '';
         const command = `\`claude-docs get ${item.slug}#${item.anchor}\``;
-        output += `| ${level.padEnd(levelWidth)} | ${title.padEnd(titleWidth)} | ${command.padEnd(commandWidth + 2)} |\n`;
+
+        output += `${indent}${bullet}**${item.anchor}** → ${command}\n\n`;
       }
     }
 
-    output += `Total: ${data.totalCount} ${data.type === 'list_all' ? 'documents' : 'sections'}\n`;
-
-    // Add usage examples for list_all
-    if (data.type === 'list_all') {
-      output += '\n## Usage Examples\n\n';
-      output += '```bash\n';
-      output += '# Get a specific document\n';
-      output += 'claude-docs get overview\n\n';
-      output += '# Get a document with specific section\n';
-      output += 'claude-docs get settings#hooks\n\n';
-      output += '# List sections within a document\n';
-      output += 'claude-docs list quickstart\n';
-      output += '```\n';
-
-      output += '\n## Note on Related Topics\n\n';
-      output += 'Some topics have multiple related documents:\n';
-      output += '- **Plugins**: See both `plugins` and `plugins-reference`\n';
-      output += '- **Plugins**: Also check `plugin-marketplaces`\n';
-      output += '- **Hooks**: See both `hooks` and `hooks-guide`\n';
-      output += '- **Settings**: Related to `model-config`, `terminal-config`, `statusline`\n';
-    }
+    output += `\nTotal: ${data.totalCount} ${data.type === 'list_all' ? 'documents' : 'sections'}\n`;
 
     // Only show metadata footer if data is stale (>24h)
     if (metadata?.dataAge && metadata.dataAge > 24) {
@@ -413,23 +379,38 @@ export class UserRenderer implements Renderer {
         const tableWidth = maxSlugWidth + maxTitleWidth + sectionsWidth + 8;
 
         for (const category of data.categories) {
-          // Category divider (match table width exactly)
-          output += this.formatter.info(boxDrawing.createDivider(category.name, tableWidth));
+          // Category divider
+          output += this.formatter.info(boxDrawing.createDivider(category.name, 64));
           output += '\n\n';
 
-          // Build table data with fixed widths
-          const headers = [
-            this.formatter.bold('Slug'.padEnd(maxSlugWidth)),
-            this.formatter.bold('Title'.padEnd(maxTitleWidth)),
-            this.formatter.bold('Sections'),
-          ];
-          const rows = category.docs.map((item) => [
-            this.formatter.cyan(item.slug.padEnd(maxSlugWidth)),
-            item.title.padEnd(maxTitleWidth),
-            this.formatter.dim(boxDrawing.rightAlign(String(item.sectionCount ?? 'N/A'), 8)),
-          ]);
+          // Indented list format - no tables
+          for (const item of category.docs) {
+            const sections = item.sectionCount ?? 0;
+            const sectionsText = this.formatter.dim(`${sections} §`);
 
-          output += boxDrawing.createTable(headers, rows, 'light');
+            // Line 1: Slug and section count
+            output += `  ${item.slug.padEnd(maxSlugWidth)}${sectionsText.padStart(20)}\n`;
+
+            // Line 2: Description (wrapped at ~60 chars, indented)
+            if (item.description) {
+              const words = item.description.split(' ');
+              let line = '  ';
+              for (const word of words) {
+                if (line.length + word.length + 1 > 62) {
+                  output += `${this.formatter.dim(line)}\n`;
+                  line = `  ${word} `;
+                } else {
+                  line += `${word} `;
+                }
+              }
+              if (line.trim().length > 0) {
+                output += `${this.formatter.dim(line.trimEnd())}\n`;
+              }
+            }
+
+            output += '\n';
+          }
+
           output += '\n';
         }
       }
@@ -452,31 +433,68 @@ export class UserRenderer implements Renderer {
 
       output += boxDrawing.createInfoBox(tips);
     } else {
-      // Section list
+      // Section list (TOC) - tree-style hierarchy
       const docName = data.items[0]?.slug ?? 'Document';
       output += boxDrawing.createHeaderBox(`📖 ${docName} - Table of Contents`);
       output += '\n';
 
-      const headers = [this.formatter.bold('Level'), this.formatter.bold('Section')];
-      const rows = data.items.map((item) => {
-        const indent = '  '.repeat((item.level ?? 1) - 1);
-        const level = this.formatter.dim('#'.repeat(item.level ?? 1));
-        return [level, indent + item.title];
-      });
+      output += this.formatter.info(boxDrawing.createDivider('Sections', 64));
+      output += '\n\n';
 
-      output += boxDrawing.createTable(headers, rows, 'light');
-      output += '\n';
+      // Build tree structure with proper nesting
+      for (let i = 0; i < data.items.length; i++) {
+        const item = data.items[i];
+        if (!item) continue;
+
+        const level = item.level ?? 1;
+        const nextItem = data.items[i + 1];
+        const nextLevel = nextItem?.level ?? 0;
+
+        // Base indentation
+        const baseIndent = '  ';
+
+        // Tree connectors for nested sections (level 3+)
+        let prefix = '';
+        if (level === 1) {
+          // Top level - no tree connector
+          prefix = '';
+        } else if (level === 2) {
+          // Level 2 - no tree connector, just indentation
+          prefix = '';
+        } else {
+          // Level 3+ - use tree connectors
+          const parentIndent = '  '.repeat(level - 2);
+          // Check if last child
+          const isLastChild = !nextItem || nextLevel < level;
+          const connector = isLastChild ? '└─ ' : '├─ ';
+
+          prefix = `${parentIndent}  ${connector}`;
+        }
+
+        // Indentation based on level
+        const indent = level === 1 ? '' : '  '.repeat(level - 1);
+
+        // Line 1: Section title
+        output += `${baseIndent}${indent}${prefix}${item.title}\n`;
+
+        // Line 2: Command (indented to align)
+        const cmdIndent = level === 1 ? '  ' : `${'  '.repeat(level)}   `;
+        output += `${baseIndent}${cmdIndent}${this.formatter.dim(`→ ${item.slug}#${item.anchor}`)}\n\n`;
+      }
+
+      output += this.formatter.info('━'.repeat(64));
+      output += '\n\n';
 
       output += `${this.formatter.bold(`Total: ${data.totalCount} sections`)}\n\n`;
 
       // Info box
       const tips = [
         '',
-        '  To read any section, use:',
+        '  ▸ To read any section:',
         '',
-        `${this.formatter.success('  ▸')} ${this.formatter.cyan(`claude-docs get ${docName}#section-name`)}`,
+        `    ${this.formatter.cyan(`claude-docs get ${docName}#section-name`)}`,
         '',
-        `${this.formatter.warning('  💡')} Tip: Anchor slugs are lowercase with hyphens`,
+        `  ${this.formatter.warning('💡')} Tip: Anchor slugs are lowercase with hyphens`,
         '',
       ];
 

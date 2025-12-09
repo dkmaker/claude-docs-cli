@@ -234,7 +234,7 @@ async function performUpdateCheck(): Promise<void> {
       const { downloadFile } = await import('../utils/http-client.js');
       const { transformMarkdown } = await import('../lib/markdown-transformer.js');
 
-      const mdUrl = `${doc.url}.md`;
+      const mdUrl = doc.url; // URLs already include .md
       const downloadResult = await downloadFile(mdUrl, { maxRetries: 3, timeout: 30000 });
 
       if (!downloadResult.success || !downloadResult.content) {

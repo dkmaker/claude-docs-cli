@@ -62,55 +62,76 @@ Status: Ready for new release
 
 ### 3. Determine Next Action
 
+**IMPORTANT**: This repo has branch protection on `main`. You MUST use PRs.
+
 Based on the state, tell the user what to do:
 
-**Scenario A: Working on changes, no changeset yet**
-- Detected: Modified files, 0 changesets
-- Action: "Create a changeset for your changes"
-- Command: `/change:changeset "your change description"`
+**Scenario A: On feature branch with changes, no changeset**
+- Detected: Not on main, modified files, 0 changesets
+- Action: "Create a changeset, commit it, then create PR to main"
+- Steps:
+  1. `/change:changeset` - Create changeset
+  2. `git add .changeset/ && git commit -m "chore: add changeset"`
+  3. `git push origin <branch-name>`
+  4. `gh pr create` - Create PR to main
+  5. Merge PR when CI passes
+  6. Changesets action will auto-create Version PR on main
+  7. Merge Version PR to publish release
 
-**Scenario B: Have changesets, ready to release**
-- Detected: Pending changesets exist, clean working directory
-- Action: "Preview and create release"
-- Commands:
-  1. `/change:version` (preview)
-  2. `/change:release` (create PR)
+**Scenario B: On feature branch with changeset committed**
+- Detected: Not on main, changeset exists, clean working tree
+- Action: "Push branch and create PR to main"
+- Steps:
+  1. `git push origin <branch-name>`
+  2. `gh pr create` - Create PR to main
+  3. Merge PR when CI passes
 
-**Scenario C: Changesets exist, uncommitted**
-- Detected: Changeset files not yet committed
-- Action: "Commit your changeset files"
+**Scenario C: On main with pending changesets**
+- Detected: On main, changesets exist
+- Action: "Wait for or check Version Packages PR"
+- Note: GitHub Action should auto-create Version PR
+- Check: `gh pr list` to see if it exists
+- Merge the Version PR to publish release
+
+**Scenario D: Version Packages PR exists**
+- Detected: PR title contains "version packages"
+- Action: "Merge the Version PR to publish release"
+- Note: This will trigger automatic release creation
+
+**Scenario E: On main, no changesets, clean**
+- Detected: On main, no changesets, no changes
+- Action: "Create a feature branch for new work"
+- Command: `git checkout -b feature/your-feature`
+
+**Scenario F: Uncommitted changeset files**
+- Detected: Changeset files in git status
+- Action: "Commit your changeset"
 - Command: `/change:commit`
-
-**Scenario D: No changesets, clean working directory**
-- Detected: No changesets, no uncommitted changes
-- Action: "Make some changes first, then create a changeset"
-
-**Scenario E: On a release branch**
-- Detected: Branch name contains "release"
-- Action: "Merge your release PR to complete the release"
-- Command: `/change:merge`
-
-**Scenario F: Release PR exists, ready to merge**
-- Detected: Open PR with "release" in title, all checks passed
-- Action: "Merge the PR to complete the release"
-- Command: `/change:merge`
 
 ### 4. Show Available Commands
 
 List all release management commands:
 
 ```
-Full Release Workflow (AI-Assisted):
--------------------------------------
-/change:help      - Analyze status and guide next steps
-/change:changeset - Create changeset (AI analyzes changes)
-/change:commit    - Commit changeset files
-/change:version   - Preview version bump
-/change:release   - Create release PR (bump + branch + PR)
-/change:merge     - Merge PR and complete release
+Full Release Workflow (with Branch Protection):
+------------------------------------------------
+Step 1: /change:changeset  - Create changeset for your changes
+Step 2: /change:commit     - Commit changeset files
+Step 3: git push + PR      - Push feature branch, create PR to main
+Step 4: Merge PR           - Merge when CI passes
+Step 5: Auto Version PR    - GitHub Action creates "Version Packages" PR
+Step 6: /change:merge      - Merge Version PR to publish release
 
-Shortcuts (if no conflicts):
-/help, /changeset, /commit, /version, /release, /merge
+NOTE: Steps 3-5 involve GitHub PRs due to branch protection.
+      You CANNOT push directly to main.
+
+Available Commands:
+-------------------
+/change:help      - Show this status and guidance
+/change:changeset - Create changeset (AI analyzes git diff)
+/change:commit    - Commit changeset files
+/change:version   - Preview what version bump will occur
+/change:merge     - Merge Version Packages PR (final step)
 ```
 
 ### 5. Read Pending Changesets (If Any)
@@ -134,13 +155,42 @@ If LATEST_RELEASE.txt exists:
 - Show the download URL
 - Verify it matches the latest release from `gh release list`
 
+## Visual Workflow
+
+Show this diagram to explain the process:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Release Workflow (Branch Protection Enabled)               │
+└─────────────────────────────────────────────────────────────┘
+
+Feature Branch:
+  1. Make changes
+  2. /change:changeset        ← Create changeset
+  3. /change:commit           ← Commit changeset
+  4. git push origin branch   ← Push to GitHub
+  5. gh pr create             ← Create PR to main
+     └─→ CI runs (lint, test, build)
+  6. Merge PR                 ← Merge when green ✓
+
+Main Branch (automatic):
+  7. GitHub Action detects changeset
+  8. Action creates "Version Packages" PR
+     └─→ Bumps version, updates CHANGELOG
+  9. /change:merge            ← Merge Version PR
+     └─→ Creates GitHub Release automatically
+
+Published! 🎉
+```
+
 ## Important Notes
 
 - Be conversational and helpful
-- Prioritize the most likely next action
+- **Always mention branch protection** when on feature branch
+- Explain that `/change:release` is NOT needed (GitHub Action handles it)
 - Show actual file names and versions (not placeholders)
 - If confused, show the status and let user decide
-- Link related commands together (e.g., "after changeset, run version")
+- Link related commands together
 
 ## Example Output Format
 

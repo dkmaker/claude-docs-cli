@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as fileOps from '../../../src/lib/file-ops.js';
 import {
-  REMOTE_RESOURCE_URL,
+  REMOTE_LLMS_TXT_URL,
   getTotalSections,
   loadResourceConfig,
   validateResourceConfig,

@@ -19,7 +19,7 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "build": "tsc --project tsconfig.build.json && cp claude-docs-resources.json dist/",
+    "build": "tsc --project tsconfig.build.json && cp -r src/artifacts dist/",
     "clean": "rm -rf dist",
     "prebuild": "pnpm run clean",
     "validate": "pnpm run check && pnpm run type-check && pnpm run test:run",
@@ -29,20 +29,10 @@
     "version": "changeset version",
     "release": "pnpm run build && changeset publish"
   },
-  "keywords": [
-    "cli",
-    "documentation",
-    "claude",
-    "markdown"
-  ],
+  "keywords": ["cli", "documentation", "claude", "markdown"],
   "author": "",
   "license": "MIT",
-  "files": [
-    "dist/**/*.js",
-    "dist/claude-docs-resources.json",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist/**/*.js", "dist/artifacts/", "README.md", "LICENSE"],
   "engines": {
     "node": ">=22.0.0",
     "pnpm": ">=10.0.0"
